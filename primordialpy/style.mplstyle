@@ -1,0 +1,50 @@
+# Configuración de figura
+figure.figsize : 8, 5
+figure.dpi : 300
+
+# Configuración de texto y fuentes
+text.usetex : True
+text.latex.preamble : \usepackage{amsmath} \boldmath
+font.family : serif
+font.serif : Computer Modern Roman
+font.size : 15
+
+# Configuración de los ejes x e y
+xtick.direction : in
+xtick.major.size : 4
+xtick.major.width : 1
+xtick.minor.size : 2
+xtick.minor.width : 1
+xtick.labelsize : 12
+xtick.major.pad : 9
+xtick.minor.visible : True
+
+ytick.direction : in
+ytick.major.size : 4
+ytick.major.width : 1
+ytick.minor.size : 2
+ytick.minor.width : 1
+ytick.labelsize : 12
+ytick.major.pad : 9
+ytick.minor.visible : True
+ytick.right : True
+
+# Configuración de títulos y etiquetas
+axes.titlesize : 20
+axes.labelsize : 15
+
+# Configuración de líneas y márgenes
+axes.linewidth : 1
+grid.linewidth : 0.5
+lines.linewidth : 1.5
+lines.solid_capstyle : round
+axes.xmargin : 0.02
+axes.ymargin : 0.02
+
+# Configuración de la leyenda
+legend.fontsize : 15
+legend.title_fontsize : 15
+legend.frameon : False
+
+# Configuración del ciclo de colores
+axes.prop_cycle : cycler('color', ['#1F77B4', '#D62728', '#2CA02C', '#FF7F0E', '#7F7F7F', '#9467BD'])

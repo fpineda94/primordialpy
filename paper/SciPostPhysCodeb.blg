@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2022)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: SciPostPhysCodeb.aux
+The style file: SciPost_bibstyle.bst
+Database file #1: SciPost_Example_BiBTeX_File.bib
+Warning--empty note in arXiv:1108.2700
+You've used 2 entries,
+            2474 wiz_defined-function locations,
+            551 strings with 4442 characters,
+and the built_in function-call counts, 531 in all, are:
+= -- 35
+> -- 8
+< -- 0
++ -- 4
+- -- 2
+* -- 32
+:= -- 73
+add.period$ -- 2
+call.type$ -- 2
+change.case$ -- 2
+chr.to.int$ -- 0
+cite$ -- 3
+duplicate$ -- 56
+empty$ -- 57
+format.name$ -- 2
+if$ -- 111
+int.to.chr$ -- 0
+int.to.str$ -- 2
+missing$ -- 11
+newline$ -- 20
+num.names$ -- 2
+pop$ -- 19
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 13
+stack$ -- 0
+substring$ -- 10
+swap$ -- 27
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 1
+while$ -- 3
+width$ -- 3
+write$ -- 30
+(There was 1 warning)
