@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "primordialpy"
+version = "0.1.0"
+description = "A Python library for computing inflationary dynamics, primordial perturbations and PBHs abundances from any single-field inflation model"
+readme = "README.md"
+requires-python = ">=3.9.6"
+license = {text = "MIT"}
+authors = [
+    {name = "Flavio Joao Pineda Arvizu", email = "fpineda@xanum.uam.mx"}
+]
+keywords = ["cosmology", "inflation", "primordial black holes", "PBH", "power spectrum", "astrophysics"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+dependencies = [
+    "numpy>=1.20.0",
+    "matplotlib>=3.3.0",
+    "scipy>=1.7.0",
+    "sympy>=1.8.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/fpineda94/primordialpy"
+Repository = "https://github.com/fpineda94/primordialpy"
+Issues = "https://github.com/fpineda94/primordialpy/issues"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=22.0",
+    "flake8>=4.0",
+]
+
+[tool.setuptools]
+packages = ["primordialpy"]

@@ -1,8 +1,6 @@
 # PrimordialPy
 
-**PrimordialPy** is a Python library for computing primordial power spectra in single-field inflationary models.  
-It solves the Mukhanov–Sasaki equation numerically using background solutions from inflationary dynamics.
-
+**PrimordialPy** is a Python library for computing primordial power spectra and PBHs abundances in single-field inflationary models. 
 ---
 
 ## 🚀 Features
