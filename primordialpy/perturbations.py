@@ -317,8 +317,8 @@ class Perturbations:
         dhdN_im = self.solution.y[9]
 
         #Power spectrum
-        P_s = k**3*(R_re** 2 + R_im**2)/(2*np.pi**2)
-        P_t = 8*k**3*(h_re** 2 + h_im**2)/(2*np.pi**2)
+        P_s = k**3*(R_re**2 + R_im**2)/(2*np.pi**2)
+        P_t = 8*k**3*(h_re**2 + h_im**2)/(2*np.pi**2)
         
 
         #Primordial power spectrum and tensor to scalar ratio at pivot scale
