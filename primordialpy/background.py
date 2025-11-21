@@ -145,7 +145,6 @@ class Background:
             method = 'DOP853',
             rtol = 1e-6,
             atol = 1e-12,
-            max_step = 0.01,
             dense_output = True)
     
     

@@ -85,14 +85,19 @@ class Perturbations:
         self.N_inside = N_inside 
         self.Nend = self.background.N_end 
         self.Nhc = self.Nend - self.N_CMB
-
-
+  
         #Configuration of k modes
         self.k_CMB = k_CMB #CMB scale
         self.k_pivot = self.aH(self.Nhc) 
         self.norma = self.k_CMB/self.k_pivot    #Normalization factor to convert k modes in Mpc^-1
-        self.k_min, self.k_max = self.norma*self.aH(self.Nhc - 7), self.norma*self.aH(self.Nend - 4)
+
+        if hasattr(self, 'scale') and self.scale == 'CMB':
+                self.k_min, self.k_max = self.norma*self.aH(self.Nhc - 7), self.norma*self.aH(self.Nhc + 7)
+        elif hasattr(self, 'scale') and self.scale == 'PBH':
+                self.k_min, self.k_max = self.norma*self.aH(self.Nhc - 7), self.norma*self.aH(self.Nend - 4)
+      
         self.k_modes = np.logspace(np.log10(self.k_min), np.log10(self.k_max), num = 1000)  #List modes in Mpc^-1
+
 
 
         # #Background data
@@ -193,7 +198,7 @@ class Perturbations:
 
     def N_ini(self, k=None):
         '''
-        Find the efold N_ini for a given k mode, 4 efolds before horizon crossing.
+        Find the efold N_ini for a given k mode, 5 efolds before horizon crossing.
         '''
         if k is not None:
             n_hc = self.N_hc(k)[0] 
@@ -205,33 +210,14 @@ class Perturbations:
         ]
 
 
-    def N_shs(self, k = None, ratio=1e-2):
+    def N_shs(self, k =None):
 
-        '''
-        Returns the efold N_shs such that k = ratio * aH(N), i.e., the mode is well outside the horizon.
-        It can receive either a scalar or an array of k.
-        '''
-        def condition(N, k_val):
-            return k_val - ratio * self.norma * self.aH(N)
-
-        if k is None:
-            raise ValueError("You must specify the value or array of k.")
-
-        if np.isscalar(k):
-            try:
-                return brentq(condition, 0, self.Nend, args=(k,))
-            except ValueError as e:
-                print(f"Warning: Could not find N_shs for k={k} in [0, {self.Nend}]. Error: {e}")
-                return np.nan
+        if k is not None:
+            n_hc = self.N_hc(k)[0]
+            return n_hc + 5 if not np.isnan(n_hc) else np.nan
         else:
-            results = []
-            for ki in k:
-                try:
-                    results.append(brentq(condition, 0, self.Nend, args=(ki,)))
-                except ValueError as e:
-                    print(f"Warning: Could not find N_shs for k={ki} in [0, {self.Nend}]. Error: {e}")
-                    results.append(np.nan)
-            return results
+            return [N_hc + 5 if not np.isnan(N_hc) else np.nan
+                    for N_hc, _ in self.N_hc()]
 
 
 
@@ -251,7 +237,7 @@ class Perturbations:
         dphidN0 = self.dphidN(N0)
         H0 = self.H(N0)
         Y0 = [phi0, dphidN0, H0]
-        i, d2phidN20, dHdN0 = self.background._EDOs(N0, Y0)
+        _, d2phidN20, _ = self.background._EDOs(N0, Y0)
         z0 = self._z(a0, dphidN0)
 
 
@@ -282,7 +268,7 @@ class Perturbations:
         N_ini = self.N_ini(k)
         Nshs = self.N_shs(k)
         N_span = [N_ini, Nshs]
-        N_eval = np.linspace(N_ini, Nshs, 1000)
+        N_eval = np.linspace(N_ini, Nshs, 10000)
 
         self.solution = solve_ivp(lambda N, Y: self._ODEs(N, Y, k),  
                         N_span, 

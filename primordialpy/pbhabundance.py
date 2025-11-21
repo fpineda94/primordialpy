@@ -85,8 +85,8 @@ class PBHAbundance:
     def beta(self, k):
         sigma = self.sigma_squared(k)
         beta = (
-            self.gamma
-            * (sigma**0.5 /(np.sqrt(2*np.pi)*self.delta_c))
+            np.sqrt(2/np.pi)
+            * (sigma**0.5 /(self.delta_c))
             * np.exp(-self.delta_c**2 / (2 * sigma))
         )
         return beta
@@ -98,12 +98,7 @@ class PBHAbundance:
         Relation between PBH mass and horizon mass in solar masses.
         """
         kCMB = 0.05  # Mpc^-1
-        M = (
-            1.13e15
-            * (self.gamma / 0.2)
-            * (self.gstar / 106.75) ** (-1/6)
-            * (kCMB / k) ** 2
-        )  # solar masses
+        M = 3.68*(self.gamma/0.2)*(self.gstar/10.75)**(-1/6)/(k/1e6)**2
         return M
 
     # ---------------- PBH abundance ----------------
@@ -114,21 +109,14 @@ class PBHAbundance:
         mpbh = self.Mpbh(k)  # solar masses
         beta = self.beta(k)
 
-        fPBH = (
-            1.68e8*(self.gamma / 0.2) ** (0.5)
-            * (self.gstar / 106.75) ** (-1/4)
-            * (mpbh / self.Msun) ** (-0.5)
-            * beta
-        )
+        fPBH = (beta/3.94e-9)*np.sqrt(self.gamma/0.2)*(self.gstar/10.75)**(-0.25)/(np.sqrt(mpbh))
 
         idx_peak = np.argmax(fPBH)
         mpbh_peak = mpbh[idx_peak]
 
-        fPBH_tot = np.trapz(fPBH, np.log(mpbh))
 
         print(f'fPBH_peak = {fPBH[idx_peak]}')
         print(fr'MPBH_peak = {mpbh_peak} M⊙')
-        print(f'Total fPBH abundance: {fPBH_tot}')
 
 
         if save:
@@ -142,6 +130,6 @@ class PBHAbundance:
                        header = header,
                        fmt = '%.16e'
                        )
-        return mpbh, fPBH, fPBH_tot
+        return mpbh, fPBH
     
 
