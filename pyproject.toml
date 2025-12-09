@@ -7,7 +7,8 @@ name = "primordialpy"
 version = "0.1.0"
 description = "A Python library for computing inflationary dynamics, primordial perturbations and PBHs abundances from any single-field inflation model"
 readme = "README.md"
-requires-python = ">=3.9.6"
+# Relajé un poco la versión a 3.9 general, es más estándar que especificar el patch .6
+requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
     {name = "Flavio Joao Pineda Arvizu", email = "fpineda@xanum.uam.mx"}
@@ -25,11 +26,14 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 
+# --- AQUÍ ESTABAN LOS FALTANTES ---
 dependencies = [
     "numpy>=1.20.0",
     "matplotlib>=3.3.0",
     "scipy>=1.7.0",
     "sympy>=1.8.0",
+    "joblib>=1.0.0",   # Necesario para el paralelismo
+    "tqdm>=4.60.0",    # Necesario para la barra de progreso
 ]
 
 [project.urls]
@@ -42,7 +46,14 @@ dev = [
     "pytest>=7.0",
     "black>=22.0",
     "flake8>=4.0",
+    "build", 
+    "twine"
 ]
 
+# --- ESTO ES CRÍTICO PARA TU ARCHIVO DE ESTILO ---
 [tool.setuptools]
 packages = ["primordialpy"]
+
+[tool.setuptools.package-data]
+# Esto le dice a pip: "Dentro de la carpeta primordialpy, incluye cualquier archivo .mplstyle"
+primordialpy = ["*.mplstyle", "stylelib/*.mplstyle"]
