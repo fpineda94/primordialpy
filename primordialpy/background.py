@@ -13,42 +13,6 @@ class Background:
     and the Hubble parameter as functions of the number of e-folds N.
     It computes relevant background quantities such as the slow-roll parameters,
     the scale factor, and the comoving Hubble radius.
-
-    Upon instantiation, the background equations are solved automatically.
-
-    Parameters
-    ----------
-    potential : Potential
-        An instance of a class implementing the inflationary potential interface.
-    phi0 : float
-        Initial value of the inflaton field.
-    N_in : float, optional
-        Initial number of e-folds (default is 0).
-    N_fin : float, optional
-        Final number of e-folds to integrate up to (default is 80).
-
-    Attributes
-    ----------
-    solution : OdeResult
-        Solution of the ODE system from `scipy.integrate.solve_ivp`, includes phi(N), dphi/dN and H(N).
-    k_CMB : float
-        Pivot scale in Mpc⁻¹ used to identify horizon crossing (default is 0.05 Mpc⁻¹).
-
-    Properties
-    ----------
-    data : dict
-        Dictionary containing background quantities: N, phi, dphidN, H, a, aH, eps_H, eta_H.
-    N_end : float
-        Number of e-folds at the end of inflation, defined by eps_H = 1.
-    Ne : ndarray
-        Array of remaining e-folds before the end of inflation: Ne = N_end - N.
-    N_CMB : float
-        Number of e-folds N when the pivot scale crosses the horizon: k = a(N) * H(N).
-
-    Methods
-    -------
-    interpolation(x='Ne')
-        Returns interpolating functions for background quantities as functions of 'N' or 'Ne'.
     """
 
     def __init__(self,
@@ -75,6 +39,7 @@ class Background:
         return np.sqrt(V / kinetic_term)
 
     def _EDOs(self, N, Y):
+
         phi, dphidN = Y  
         H = self._H(phi, dphidN)
         

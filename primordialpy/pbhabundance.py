@@ -23,7 +23,7 @@ class PBHAbundance:
             self.Ps,
             kind="cubic",
             bounds_error=False,
-            fill_value="extrapolate",
+            fill_value= 0.0,
         )
 
         # Peak values
