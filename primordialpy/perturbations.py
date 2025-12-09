@@ -1,7 +1,11 @@
+# es largo
+
 import numpy as np 
 from scipy.integrate import solve_ivp, odeint
 from scipy.optimize import brentq 
 import matplotlib.pyplot as plt
+from functools import partial
+from multiprocessing import Pool, cpu_count
 import os
 
 from primordialpy.background import Background
@@ -66,7 +70,7 @@ class Perturbations:
         Plots tensor-to-scalar ratio r(k).
     """
 
-    def __init__(self, potential : Potential, background: Background, scale, N_CMB,  k_CMB = 0.05,  N_inside = 4):
+    def __init__(self, potential : Potential, background: Background, scale, N_CMB,  k_CMB = 0.05,  N_inside = 5):
 
         #Basic configuration
         self.potential = potential     
@@ -83,7 +87,7 @@ class Perturbations:
         #Efolds configuration
         self.N_CMB = N_CMB 
         self.N_inside = N_inside 
-        self.Nend = self.background.N_end 
+        self.Nend = self.background.data['N'][-1]
         self.Nhc = self.Nend - self.N_CMB
   
         #Configuration of k modes
@@ -236,8 +240,8 @@ class Perturbations:
         phi0 = self.phi(N0)
         dphidN0 = self.dphidN(N0)
         H0 = self.H(N0)
-        Y0 = [phi0, dphidN0, H0]
-        _, d2phidN20, _ = self.background._EDOs(N0, Y0)
+        Y0 = [phi0, dphidN0]
+        _, d2phidN20 = self.background._EDOs(N0, Y0)
         z0 = self._z(a0, dphidN0)
 
 
@@ -575,34 +579,3 @@ class Perturbations:
             print(f"Figure saved as: {filepath}")
         
         plt.show()
-
-    
-    def Plot_r(self, dpi, save = False, filename = 'tensor_to_scalar_ratio.png', title = None):   
-
-        if not hasattr(self, '_P_s_array') or not hasattr(self, '_P_t_array'):
-            raise ValueError('First you must run the Power_spectrum method to calculate the spectra.')
-        
-        P_S = self._P_s_array
-        P_T = self._P_t_array
-        r = P_T/P_S
-
-        style(dpi = dpi)
-        plt.semilogx(self.k_modes, r)
-        plt.axvline(self.k_CMB, color = 'k', linestyle = 'dashed', linewidth= 0.8, label = r'$k_*$')
-        plt.xlabel(r'$k$ [Mpc$^{-1}$]')
-        plt.ylabel(r'$r(k)$')
-        plt.legend()
-        
-        if title is None:
-            plt.title(r'Tensor to scalar ratio $r$')
-        
-        plt.tight_layout()
-
-        if save:            
-
-            filepath = os.path.join('Figures', filename)
-            plt.savefig(filepath, dpi=300, bbox_inches='tight')
-            print(f"Figure saved as: {filepath}")
-            
-        plt.show()
-

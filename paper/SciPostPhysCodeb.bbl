@@ -1,4 +1,4 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{}
 \providecommand{\url}[1]{\texttt{#1}}
 \providecommand{\urlprefix}{URL }
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -6,17 +6,5 @@
   \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup
   \urlstyle{rm}\Url}\fi
 \providecommand{\eprint}[2][]{\url{#2}}
-
-\bibitem{1931_Bethe_ZP_71}
-H.~A. Bethe,
-\newblock \emph{Zur {T}heorie der {M}etalle. i. {E}igenwerte und
-  {E}igenfunktionen der linearen {A}tomkette},
-\newblock Zeit. f\"ur Physik \textbf{71}, 205 (1931),
-\newblock \doi{10.1007/BF01341708}.
-
-\bibitem{arXiv:1108.2700}
-P.~Ginsparg,
-\newblock \emph{It was twenty years ago today ...},
-\newblock \eprint{http://arxiv.org/abs/1108.2700}.
 
 \end{thebibliography}

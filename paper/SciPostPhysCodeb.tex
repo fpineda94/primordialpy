@@ -63,7 +63,7 @@ PrimordialPy: a Python library for computing primordial power spectrum and PBHs 
 % Mark the corresponding author(s) with a superscript symbol in this order
 % \star, \dagger, \ddagger, \circ, \S, \P, \parallel, ...
 Flavio Pineda\textsuperscript{1$\star$}
-Luis O. Pimentel Rico\textsuperscript{1$\dagger$}
+Luis O. Pimentel\textsuperscript{1$\dagger$}
 %%%%%%%%%% END TODO: AUTHORS
 }\end{center}
 
@@ -87,8 +87,7 @@ $\dagger$ \href{mailto:email1}{\small lopr@xanum.uam.mx}
 \textbf{\boldmath{%
 %%%%%%%%%% TODO: ABSTRACT
 % Write your abstract here.
-PrimordialPy is an open-source scientific library developed in Python for the study of single-field inflationary models. Cosmic inflation stands as one of the leading paradigms of modern cosmology, making its analysis essential for understanding the fundamental aspects of the early universe. PrimordialPy is designed to facilitate numerical computations of the inflaton dynamics, primordial perturbations, the primordial power spectrum, and the abundance of primordial black holes in an efficient, modular, and accessible way. The user is free to implement any single-field inflation model with a canonical kinetic term by defining the inflaton field $\phi$ and the corresponding model parameters. The source code of the project is available at 
-\href{https://github.com/fpineda94/primordialpy.git}{\texttt{GitHub}}.
+We present PrimordialPy, an open-source Python library designed to streamline the analysis of single-field inflationary models. Unlike existing tools often integrated into larger Boltzmann solvers, PrimordialPy provides a lightweight, modular, and object-oriented framework focused specifically on the inflationary epoch. The library numerically solves the background inflaton evolution and the Mukhanov-Sasaki equations for linear perturbations without relying on slow-roll approximations, ensuring accuracy for models with non-trivial kinetic terms or potential features. A key distinction of PrimordialPy is its dedicated module for computing the abundance of Primordial Black Holes (PBHs) directly from the primordial power spectrum, facilitating constraints on dark matter scenarios from inflation. We detail the numerical implementation, validate the code against standard benchmarks, and demonstrate its usage through examples. The source code is fully documented, unit-tested, and available at {\href{https://github.com/fpineda94/primordialpy.git}{\texttt{GitHub}}}, allowing researchers to easily extend the framework to new phenomenological models.
 %%%%%%%%%% END TODO: ABSTRACT
 }}
 
@@ -144,79 +143,30 @@ La inflación cósmica se ha convertido en la piedra angular y el esquema teóri
 
 
 \section{Physics of single-field inflation}
-Use sections to structure your article's presentation.
 
-Equations should be centered; multi-line equations should be aligned.
-\begin{equation}
-H = \sum_{j=1}^N \left[J (S^x_j S^x_{j+1} + S^y_j S^y_{j+1} + \Delta S^z_j S^z_{j+1}) - h S^z_j \right].
-\end{equation}
 
-In the list of references, cited papers \cite{1931_Bethe_ZP_71} should include authors, title, journal reference (journal name, volume number (in bold), start page) and most importantly a DOI link. For a preprint \cite{arXiv:1108.2700}, please include authors, title (please ensure proper capitalization) and arXiv link. If you use BiBTeX with our style file, the right format will be automatically implemented.
-
-All equations and references should be hyperlinked to ensure ease of navigation. This also holds for [sub]sections: readers should be able to easily jump to Section \ref{sec:another}.
-
-\section{Another Section}
+\section{Primordial black holes (PBHs) formation}
 \label{sec:another}
-There is no strict length limitation, but the authors are strongly encouraged to keep contents to the strict minimum necessary for peers to reproduce the research described in the paper.
 
-\subsection{A first subsection}
-You are free to use dividers as you see fit.
-\subsection{A note about figures}
-Figures should only occupy the stricly necessary space, in any case individually fitting on a single page. Each figure item should be appropriately labeled and accompanied by a descriptive caption. {\bf SciPost does not accept creative or promotional figures or artist's impressions}; on the other hand, technical drawings and scientifically accurate representations are encouraged.
+\subsection{Abundance of PBHs}
 
 
-\section{Conclusion}
-You must include a conclusion.
-
-\section*{Acknowledgements}
-Acknowledgements should follow immediately after the conclusion.
-
-% TODO: include author contributions
-\paragraph{Author contributions}
-This is optional. If desired, contributions should be succinctly described in a single short paragraph, using author initials.
-
-% TODO: include funding information
-\paragraph{Funding information}
-Authors are required to provide funding information, including relevant agencies and grant numbers with linked author's initials. Correctly-provided data will be linked to funders listed in the \href{https://www.crossref.org/services/funder-registry/}{\sf Fundref registry}.
 
 
-\begin{appendix}
-\numberwithin{equation}{section}
-
-\section{First appendix}
-Add material which is better left outside the main text in a series of Appendices labeled by capital letters.
-
-\section{About references}
-Your references should start with the comma-separated author list (initials + last name), the publication title in italics, the journal reference with volume in bold, start page number, publication year in parenthesis, completed by the DOI link (linking must be implemented before publication). If using BiBTeX, please use the style files provided  on \url{https://scipost.org/submissions/author_guidelines}. If you are using our LaTeX template, simply add
-\begin{verbatim}
-\bibliography{your_bibtex_file}
-\end{verbatim}
-at the end of your document. If you are not using our LaTeX template, please still use our bibstyle as
-\begin{verbatim}
-\bibliographystyle{SciPost_bibstyle}
-\end{verbatim}
-in order to simplify the production of your paper.
-\end{appendix}
 
 
-%%%%%%%%% END TODO: CONTENTS
+\section{Structure of the library}
 
 
-%%%%%%%%%% TODO: BIBLIOGRAPHY
-% Provide your bibliography here. You have two options:
+\section{Examples}
+  
+  \subsection{Starobinsky inflation}
+  \subsection{$\alpha$-attractors}
+  \subsection{KKLT inflation with a bump}
 
-%%% FIRST OPTION
-% Write your entries here directly, following the example below, including:
-% Author(s), Title, Journal Ref. with year in parentheses at the end, followed by the DOI number.
 
-%\begin{thebibliography}{99}
-%\bibitem{1931_Bethe_ZP_71} H. A. Bethe, {\it Zur Theorie der Metalle. i. Eigenwerte und Eigenfunktionen der linearen Atomkette}, Zeit. f{\"u}r Phys. {\bf 71}, 205 (1931), \doi{10.1007\%2FBF01341708}.
-%\bibitem{arXiv:1108.2700} P. Ginsparg, {\it It was twenty years ago today... }, \url{http://arxiv.org/abs/1108.2700}.
-%\end{thebibliography}
 
-%%% SECOND OPTION
-% Use your bibtex library, formatted by the SciPost style file.
-\bibliography{SciPost_Example_BiBTeX_File.bib}
+\bibliography{biblio.bib}
 
 %%%%%%%%%% END TODO: BIBLIOGRAPHY
 

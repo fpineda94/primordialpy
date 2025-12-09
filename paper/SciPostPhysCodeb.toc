@@ -1,11 +1,10 @@
 \contentsline {section}{\numberline {1}Introduction}{2}{section.1}%
 \contentsline {section}{\numberline {2}Physics of single-field inflation}{2}{section.2}%
-\contentsline {section}{\numberline {3}Another Section}{2}{section.3}%
-\contentsline {subsection}{\numberline {3.1}A first subsection}{2}{subsection.3.1}%
-\contentsline {subsection}{\numberline {3.2}A note about figures}{2}{subsection.3.2}%
-\contentsline {section}{\numberline {4}Conclusion}{2}{section.4}%
-\contentsline {paragraph}{Author contributions}{3}{paragraph*.1}%
-\contentsline {paragraph}{Funding information}{3}{paragraph*.2}%
-\contentsline {section}{\numberline {A}First appendix}{3}{appendix.A}%
-\contentsline {section}{\numberline {B}About references}{3}{appendix.B}%
-\contentsline {section}{References}{3}{appendix.B}%
+\contentsline {section}{\numberline {3}Primordial black holes (PBHs) formation}{2}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Abundance of PBHs}{2}{subsection.3.1}%
+\contentsline {section}{\numberline {4}Structure of the library}{2}{section.4}%
+\contentsline {section}{\numberline {5}Examples}{2}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Starobinsky inflation}{2}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}$\alpha $-attractors}{2}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}KKLT inflation with a bump}{2}{subsection.5.3}%
+\contentsline {section}{References}{2}{subsection.5.3}%

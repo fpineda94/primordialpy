@@ -85,8 +85,7 @@ class PBHAbundance:
     def beta(self, k):
         sigma = self.sigma_squared(k)
         beta = (
-            np.sqrt
-            * (sigma**0.5 /(self.delta_c))
+            np.sqrt(2/np.pi)*(sigma**0.5 /(self.delta_c))
             * np.exp(-self.delta_c**2 / (2 * sigma))
         )
         return beta
