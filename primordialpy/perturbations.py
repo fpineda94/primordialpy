@@ -4,8 +4,8 @@ import numpy as np
 from scipy.integrate import solve_ivp, odeint
 from scipy.optimize import brentq 
 import matplotlib.pyplot as plt
-from functools import partial
-from multiprocessing import Pool, cpu_count
+from joblib import Parallel, delayed
+from tqdm import tqdm
 import os
 
 from primordialpy.background import Background
@@ -87,8 +87,10 @@ class Perturbations:
         #Efolds configuration
         self.N_CMB = N_CMB 
         self.N_inside = N_inside 
-        self.Nend = self.background.data['N'][-1]
+        self.Nend = self.background.data()['N'][-1]
         self.Nhc = self.Nend - self.N_CMB
+     
+ 
   
         #Configuration of k modes
         self.k_CMB = k_CMB #CMB scale
@@ -225,8 +227,6 @@ class Perturbations:
 
 
 
-
-
     def Initial_conditions(self, k):
 
         '''
@@ -261,13 +261,15 @@ class Perturbations:
 
     
 
-    def solver(self):
+    def _solver(self, k = None):
 
         '''
         Solves the scalar perturbation equation for the pivot mode k = 0.05 Mpc^-1
         '''
 
-        k = self.k_CMB
+        if k is None:
+            k = self.k_CMB
+    
         Y0 = self.Initial_conditions(k)
         N_ini = self.N_ini(k)
         Nshs = self.N_shs(k)
@@ -278,58 +280,84 @@ class Perturbations:
                         N_span, 
                         Y0, 
                         t_eval= N_eval, 
-                        method ='Radau',
+                        method ='LSODA',
                         rtol = 1e-8, 
                         atol = 1e-12, 
                         dense_output= True)   
         return self.solution
     
 
-    @property
-    def data(self):
+    def Power_spectra_pivot(self, k= None):
+
+        if k is None:
+            k = self.k_CMB
         
-        '''
-        Extract the data of the commuting curvature perturbation and its derivative as a function of the number of e-folds N
-        and store them in a dictionary.
-        '''
+        sol = self._solver(k)
 
-        if self.solution is None:
-            raise ValueError('First you have to solve the system with solver method')
-        k = self.k_CMB
-        N = self.solution.t
-        R_re = self.solution.y[2]
-        dRdN_re = self.solution.y[3] 
-        R_im = self.solution.y[4]
-        dRdN_im = self.solution.y[5]
-        h_re = self.solution.y[6]
-        dhdN_re = self.solution.y[7]
-        h_im = self.solution.y[8]
-        dhdN_im = self.solution.y[9]
+        #Data
+        N = sol.t
+        R_re = sol.y[2]
+        R_im = sol.y[4]
+        h_re = sol.y[6]
+        h_im = sol.y[8]
 
+        
         #Power spectrum
-        P_s = k**3*(R_re**2 + R_im**2)/(2*np.pi**2)
-        P_t = 8*k**3*(h_re**2 + h_im**2)/(2*np.pi**2)
+        P_s = k**3*(R_re[-1]**2 + R_im[-1]**2)/(2*np.pi**2)
+        P_t = 8*k**3*(h_re[-1]**2 + h_im[-1]**2)/(2*np.pi**2)
+        r = P_t/P_s
+
+        print(f'Curvature power spectrum at pivot scale is {P_s}')
+        print(f'Tensor to scalar ratio at pivot scale is {r}')
+
+        return P_s, P_t, r
+
+    # @property
+    # def data(self):
+        
+    #     '''
+    #     Extract the data of the commuting curvature perturbation and its derivative as a function of the number of e-folds N
+    #     and store them in a dictionary.
+    #     '''
+
+    #     if self.solution is None:
+    #         raise ValueError('First you have to solve the system with solver method')
+    #     k = self.k_CMB
+    #     N = self.solution.t
+    #     R_re = self.solution.y[2]
+    #     dRdN_re = self.solution.y[3] 
+    #     R_im = self.solution.y[4]
+    #     dRdN_im = self.solution.y[5]
+    #     h_re = self.solution.y[6]
+    #     dhdN_re = self.solution.y[7]
+    #     h_im = self.solution.y[8]
+    #     dhdN_im = self.solution.y[9]
+
+    #     #Power spectrum
+    #     P_s = k**3*(R_re**2 + R_im**2)/(2*np.pi**2)
+    #     P_t = 8*k**3*(h_re**2 + h_im**2)/(2*np.pi**2)
         
 
-        #Primordial power spectrum and tensor to scalar ratio at pivot scale
-        Y_hc = self.solution.sol(self.N_shs(k = k))
+    #     #Primordial power spectrum and tensor to scalar ratio at pivot scale
+    #     Y_hc = self.solution.sol(self.N_shs(k = k))
 
-        Rk_re_hc = Y_hc[2]
-        Rk_im_hc = Y_hc[4]
-        h_re_hc = Y_hc[6]
-        h_im_hc = Y_hc[8]
+    #     Rk_re_hc = Y_hc[2]
+    #     Rk_im_hc = Y_hc[4]
+    #     h_re_hc = Y_hc[6]
+    #     h_im_hc = Y_hc[8]
 
 
-        P_s_pivot = k**3*(Rk_re_hc**2 + Rk_im_hc**2)/(2*np.pi**2)
-        P_t_pivot = 8*k**3*(h_re_hc**2 + h_im_hc**2)/(2*np.pi**2)
-        r_pivot = P_t_pivot/P_s_pivot
+    #     P_s_pivot = k**3*(Rk_re_hc**2 + Rk_im_hc**2)/(2*np.pi**2)
+    #     P_t_pivot = 8*k**3*(h_re_hc**2 + h_im_hc**2)/(2*np.pi**2)
+    #     r_pivot = P_t_pivot/P_s_pivot
 
         
 
-        return {'N': N, 'R_re' : R_re, 'dRdN_re': dRdN_re ,'R_im': R_im, 'dRdN_im': dRdN_im, 
-                'h_re' : h_re, 'dhdN_re' : dhdN_re, 'h_im' : h_im, 'dhdN_im' : dhdN_im,'P_s': P_s, 
-                    'P_t': P_t,  'P_s_pivot': P_s_pivot, 'P_t_pivot': P_t_pivot, 'r_pivot': r_pivot}
+    #     return {'N': N, 'R_re' : R_re, 'dRdN_re': dRdN_re ,'R_im': R_im, 'dRdN_im': dRdN_im, 
+    #             'h_re' : h_re, 'dhdN_re' : dhdN_re, 'h_im' : h_im, 'dhdN_im' : dhdN_im,'P_s': P_s, 
+    #                 'P_t': P_t,  'P_s_pivot': P_s_pivot, 'P_t_pivot': P_t_pivot, 'r_pivot': r_pivot}
     
+
 
     def _Compute_Power_spectrum(self, k):
         Y0 = self.Initial_conditions(k)
@@ -338,8 +366,12 @@ class Perturbations:
         # For odeint we need the time as the first argument in the ODE        
         def ode_func(Y, N, k):
             return self._ODEs(N, Y, k)
+        
         #We use an adaptative tolerance for the very small modes (k >> aH)
-        tol = 1e-16 / k
+        if self.scale == 'CMB':
+            tol = 1e-10
+        elif self.scale == 'PBH':
+            tol = 1e-16/k
 
         # Solve the system with odeint (LSODA optimised in FORTRAN)
         sol = odeint(
@@ -360,13 +392,16 @@ class Perturbations:
         return P_s, P_t
 
 
+
     def Power_spectrum(self, save=False, filename=None):
 
-        PS = np.zeros_like(self.k_modes)
-        PT = np.zeros_like(self.k_modes)
+        results = Parallel(n_jobs=-1)(
+            delayed(self._Compute_Power_spectrum)(k)
+            for k in tqdm(self.k_modes, desc="Computing P(k)")
+        )
 
-        for i, k in enumerate(self.k_modes):
-            PS[i], PT[i] = self._Compute_Power_spectrum(k)
+        PS = np.array([r[0] for r in results])
+        PT = np.array([r[1] for r in results])
 
         self._P_s_array = PS
         self._P_t_array = PT
@@ -381,7 +416,9 @@ class Perturbations:
                     header='k_modes P_scalar P_tensor',
                     fmt='%.16e')
 
-        return PS, PT    
+        return PS, PT 
+
+
 
     @property
     def Spectral_tilts(self):

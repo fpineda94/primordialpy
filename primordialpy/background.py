@@ -31,6 +31,13 @@ class Background:
         self.solution = None
         self._derived_data = None 
 
+         #Folder creation 
+        os.makedirs('Data', exist_ok=True)
+        os.makedirs('Figures', exist_ok=True)
+
+
+
+
     def _H(self, phi, dphidN):
         V = self.potential.evaluate(phi)
         kinetic_term = 3 - 0.5 * dphidN**2
@@ -49,10 +56,13 @@ class Background:
         d2phidN2 = -(3 - epsilon)*dphidN - (dVdphi / H**2)
         
         return [dphidN, d2phidN2] 
+    
 
-    def solve(self, method='DOP853', rtol=1e-10, atol=1e-12):
+
+    def solver(self, method='DOP853', rtol=1e-10, atol=1e-12):
         """
-        Public method to trigger the solution.
+        Public method to trigger the solution. 
+        By default the methos is DOP853, but the user can try another like RK45, LSODA or Radau. 
         """
     
         if self.dphidN_0 is None:
@@ -86,8 +96,9 @@ class Background:
         )        
         self._derived_data = None
 
-    @property
-    def data(self):
+
+
+    def data(self, save = False, filename= None):
         if self.solution is None:
             raise RuntimeError("Model not solved yet. Call .solve() first.")
         
@@ -111,30 +122,32 @@ class Background:
             eta_H = eps_H - (dphidN * d2phidN2) / (2 * eps_H)
             eta_H = eps_H - (d2phidN2 / dphidN) 
 
+        if save:
+            if filename is None:
+                filename = 'background_data.txt'
+            filepath = os.path.join('Data', filename)
+            np.savetxt(filepath, 
+                       np.column_stack([N, phi, dphidN, H, a, aH, eps_H, eta_H]),
+                       header ='N phi dphidN H a aH eps_H eta_H',
+                       fmt = '%.16e')
+
         self._derived_data = {
             'N': N, 'phi': phi, 'dphidN': dphidN, 'H': H, 
             'a': a, 'aH': aH, 'eps_H': eps_H, 'eta_H': eta_H
         }
         return self._derived_data
-
-    def save_data(self, filename='background_data.txt'):
-        os.makedirs('Data', exist_ok=True)
-        filepath = os.path.join('Data', filename)
-        d = self.data
-        header = 'N phi dphidN H a aH eps_H eta_H'
-        data_block = np.column_stack([d[k] for k in header.split()])
-        np.savetxt(filepath, data_block, header=header, fmt='%.16e')
+    
             
     
     def interpolation(self, x ='N'):
 
-        coords = {'N': self.data['N']}
+        coords = {'N': self.data()['N']}
         if x not in coords:
             raise ValueError("with_respect_to must be 'N' o 'Ne'")
 
         x_vals = coords[x]
         variables = ['phi', 'dphidN', 'H', 'a', 'aH', 'eps_H', 'eta_H']
         return {
-            var: interp1d(x_vals, self.data[var], kind='cubic', fill_value='extrapolate', bounds_error=False)
+            var: interp1d(x_vals, self.data()[var], kind='cubic', fill_value='extrapolate', bounds_error=False)
         for var in variables
         }

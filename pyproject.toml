@@ -26,14 +26,14 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
 ]
 
-# --- AQUÍ ESTABAN LOS FALTANTES ---
+
 dependencies = [
     "numpy>=1.20.0",
     "matplotlib>=3.3.0",
     "scipy>=1.7.0",
     "sympy>=1.8.0",
-    "joblib>=1.0.0",   # Necesario para el paralelismo
-    "tqdm>=4.60.0",    # Necesario para la barra de progreso
+    "joblib>=1.0.0",  
+    "tqdm>=4.60.0",    
 ]
 
 [project.urls]
@@ -50,10 +50,9 @@ dev = [
     "twine"
 ]
 
-# --- ESTO ES CRÍTICO PARA TU ARCHIVO DE ESTILO ---
+
 [tool.setuptools]
 packages = ["primordialpy"]
 
 [tool.setuptools.package-data]
-# Esto le dice a pip: "Dentro de la carpeta primordialpy, incluye cualquier archivo .mplstyle"
 primordialpy = ["*.mplstyle", "stylelib/*.mplstyle"]
