@@ -92,7 +92,8 @@ class Background:
             method=method,
             rtol=rtol,
             atol=atol,
-            events=end_inflation 
+            events=end_inflation,
+            dense_output=True
         )        
         self._derived_data = None
 
@@ -119,7 +120,6 @@ class Background:
         d2phidN2 = -(3 - eps_H)*dphidN - (dVdphi / H**2)
         
         with np.errstate(divide='ignore', invalid='ignore'):
-            eta_H = eps_H - (dphidN * d2phidN2) / (2 * eps_H)
             eta_H = eps_H - (d2phidN2 / dphidN) 
 
         if save:

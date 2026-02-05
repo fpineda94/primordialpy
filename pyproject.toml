@@ -55,4 +55,9 @@ dev = [
 packages = ["primordialpy"]
 
 [tool.setuptools.package-data]
-primordialpy = ["*.mplstyle", "stylelib/*.mplstyle"]
+primordialpy = [
+    "*.mplstyle",
+    "stylelib/*.mplstyle",
+    "constraints_data/*.txt",
+    "constraints_data/*.dat"
+]

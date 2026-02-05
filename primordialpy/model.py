@@ -133,7 +133,7 @@ class PotentialFunction(Potential):
         )
 
 
-    def plot_potential(self, phi_min, phi_max, dpi, num_points = 1000, save = False, filename = 'potential.png'):
+    def plot_potential(self, phi_min, phi_max, dpi, num_points = 1000, save = False, filename = 'potential.pdf'):
     
         phi_vals = np.linspace(phi_min, phi_max, num_points)
         V = self.evaluate(phi_vals)
@@ -149,9 +149,10 @@ class PotentialFunction(Potential):
             import os
 
             os.makedirs('Figures', exist_ok = True)
-            filepath = os.path.join('figures', filename)
+            filepath = os.path.join('Figures', filename)
             
             plt.savefig(filepath, dpi=300, bbox_inches='tight')
             print(f"Figure saved as: {filepath}")
         
         plt.show()        
+

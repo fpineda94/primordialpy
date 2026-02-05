@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import interp1d
 import os 
+import matplotlib.pyplot as plt
 
 from primordialpy.perturbations import Perturbations
 
@@ -130,5 +131,56 @@ class PBHAbundance:
                        fmt = '%.16e'
                        )
         return mpbh, fPBH
-    
 
+# ---------------- Plotting ----------------
+
+    def plot_abundance(self, ax=None, save=False, filename='fPBH.pdf', ylim_bottom=1e-25, **kwargs):
+        """
+        Plots the PBH abundance f_PBH against mass M_PBH (Solar Masses).
+        
+        Parameters:
+        -----------
+        ax : matplotlib.axes.Axes, optional
+            Existing axes to plot on. If None, a new figure is created.
+        save : bool
+            If True, saves the figure to the 'Figures' folder.
+        filename : str
+            Name of the output file.
+        ylim_bottom : float
+            Minimum value for the y-axis to avoid plotting numerical noise.
+        **kwargs :
+            Arguments passed to ax.loglog (color, linestyle, label, etc.).
+        """
+        
+        m_pbh, f_pbh = self.fPBH(save=False)
+        
+        if ax is None:
+            try:
+                from .plot_style import style
+                style()
+            except ImportError:
+                pass
+            fig, ax = plt.subplots(figsize=(8, 6))
+
+        ax.loglog(m_pbh, f_pbh, **kwargs)
+
+        ax.set_xlabel(r'$M_{\rm PBH} [M_\odot]$', fontsize=14)
+        ax.set_ylabel(r'$f_{\rm PBH} (M)$', fontsize=14)
+        
+
+        ax.set_xlim([np.min(m_pbh), np.max(m_pbh)])
+        ax.set_ylim(bottom=ylim_bottom) 
+
+        lines = [l.get_label() for l in ax.get_lines()]
+        if r'$f_{\rm PBH} = 1$' not in lines:
+            ax.axhline(1, color='gray', linestyle='--', alpha=0.5, linewidth=1, label=r'$f_{\rm PBH} = 1$')
+
+        if save:
+            import os
+            save_dir = 'Figures' 
+            os.makedirs(save_dir, exist_ok=True)
+            filepath = os.path.join(save_dir, filename)
+            plt.savefig(filepath, bbox_inches='tight', dpi=300)
+            print(f"Abundance plot saved to {filepath}")
+
+        return ax

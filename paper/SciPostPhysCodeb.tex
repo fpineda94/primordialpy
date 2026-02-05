@@ -51,7 +51,7 @@
 
 \begin{center}{\Large \textbf{\color{scipostdeepblue}{
 %%%%%%%%%% TODO: Write your article's title here
-PrimordialPy: a Python library for computing primordial power spectrum and PBHs abundances in single-field inflation
+PrimordialPy: a Python library for computing primordial power spectrum and primordial black holes abundances in single-field inflation
 %%%%%%%%%% END TODO: TITLE
 }}}\end{center}
 
@@ -71,7 +71,7 @@ Luis O. Pimentel\textsuperscript{1$\dagger$}
 %%%%%%%%%% TODO: AFFILIATIONS
 % Write all affiliations here.
 % Format: institute, city, country
-{\bf 1} Departamento de Física, Universidad Aut\'onoma Metropolitana Iztapalapa P. O. Box 55-534, 09340 M\'exico, CDMX., M\'exico
+{\bf 1} Departamento de Física, Universidad Autónoma Metropolitana Iztapalapa P. O. Box 55-534, 09340 México, CDMX., México
 %%%%%%%%%% END TODO: AFFILIATIONS
 %%%%%%%%%% TODO: EMAIL
 % Provide email address of corresponding author(s)
@@ -87,7 +87,8 @@ $\dagger$ \href{mailto:email1}{\small lopr@xanum.uam.mx}
 \textbf{\boldmath{%
 %%%%%%%%%% TODO: ABSTRACT
 % Write your abstract here.
-We present PrimordialPy, an open-source Python library designed to streamline the analysis of single-field inflationary models. Unlike existing tools often integrated into larger Boltzmann solvers, PrimordialPy provides a lightweight, modular, and object-oriented framework focused specifically on the inflationary epoch. The library numerically solves the background inflaton evolution and the Mukhanov-Sasaki equations for linear perturbations without relying on slow-roll approximations, ensuring accuracy for models with non-trivial kinetic terms or potential features. A key distinction of PrimordialPy is its dedicated module for computing the abundance of Primordial Black Holes (PBHs) directly from the primordial power spectrum, facilitating constraints on dark matter scenarios from inflation. We detail the numerical implementation, validate the code against standard benchmarks, and demonstrate its usage through examples. The source code is fully documented, unit-tested, and available at {\href{https://github.com/fpineda94/primordialpy.git}{\texttt{GitHub}}}, allowing researchers to easily extend the framework to new phenomenological models.
+PrimordialPy is an open-source scientific library developed in Python for the study of single-field inflationary models. Cosmic inflation stands as one of the leading paradigms of modern cosmology, making its analysis essential for understanding the fundamental aspects of the early universe. PrimordialPy is designed to facilitate numerical computations of the inflaton dynamics, primordial perturbations, the primordial power spectrum, and the abundance of primordial black holes in an efficient, modular, and accessible way. The user is free to implement any single-field inflation model with a canonical kinetic term by defining the inflaton field $\phi$ and the corresponding model parameters. The source code of the project is available at 
+\href{https://github.com/fpineda94/primordialpy.git}{\texttt{GitHub}}.
 %%%%%%%%%% END TODO: ABSTRACT
 }}
 
@@ -135,38 +136,65 @@ We present PrimordialPy, an open-source Python library designed to streamline th
 % An example structure is given below.
 
 \section{Introduction}
-\label{sec:intro}
+\label{sec1}
 % TODO: write your article here.
 
-La inflación cósmica se ha convertido en la piedra angular y el esquema teórico lider para explorar la física del universo temprano, proporcionando una teoría solida sobre el origen y evolución de las perturbaciones primordiales y de la formación de estructra a gran escala. De acuerdo con esta teoría, el universo sufrió una expansión acelerada en una época muy temprana,
+% | 
 
 
+La inflación cósmica se ha consolidado como el paradigma líder para describir la física del universo temprano. Más allá de resolver los problemas clásicos de la cosmología estándar (horizonte, planitud y monopolos) \cite{guth1981,Linde1982,starobinsky1980}, proporciona un marco robusto para explicar el origen y la evolución de las perturbaciones primordiales. Estas fluctuaciones de origen cuántico son las semillas de la estructura a gran escala (LSS) y de las anisotropías observadas en la radiación cósmica de fondo (CMB).
+Una predicción fundamental de los modelos de inflación de un solo campo (single-field) es la generación de un espectro de potencias de perturbaciones escalares casi invariante de escala, en excelente acuerdo con las observaciones de la misión Planck. Además de las perturbaciones escalares, la inflación predice un fondo estocástico de ondas gravitacionales primordiales provenientes de las perturbaciones tensoriales\cite{Starobinsky_1979,varun1990}, cuya detección sigue siendo uno de los objetivos principales de la cosmología observacional moderna. En años recientes, ha crecido el interés por escenarios inflacionarios que se desvían de la condición slow-roll. En particular, la presencia de una fase de Ultra-Slow-Roll (USR) debida a un punto de inflexión o una característica en el potencial inflacionario puede amplificar significativamente el espectro de potencias a escalas pequeñas (comparadas con las del CMB). Esta amplificación permite la formación de Agujeros Negros Primordiales (PBHs), los cuales representan candidatos fascinantes para la materia oscura y podrían explicar algunos de los eventos de ondas gravitacionales detectados por LIGO-Virgo-KAGRA. A pesar de la relevancia teórica de estos modelos, el cálculo preciso del espectro de potencias y la abundancia de PBHs a menudo requiere la resolución numérica de las ecuaciones de Mukhanov-Sasaki, ya que las aproximaciones de slow-roll fallan cerca de la fase USR. 
 
-\section{Physics of single-field inflation}
+Existen numerosos códigos de acceso libre que calculan la dinámica inflacionaria y la de las perturbaciones primordiales en modelos de un solo campo para un número predeterminado de potenciales tales como \texttt{Pyflation} \cite{Huston_2009}, \texttt{BINGO} \cite{Hazra2013}, \texttt{Primpy} \cite{Hergt2022} o \cite{Siddharth2024}. Para modelos multi-campo de inflación, existen los códigos más sofisticados tales como  \texttt{PyTransport} \cite{}, \texttt{CCP} o la implementación en \textit{Mathematica} del método de transporte .
 
-
-\section{Primordial black holes (PBHs) formation}
-\label{sec:another}
-
-\subsection{Abundance of PBHs}
-
-
+Sin embargo, muchos de estos están optimizados principalmente para las escalas de la Radiación Cósmica de Fondo (CMB) o requieren una infraestructura compleja para implementar nuevos modelos de física más allá del slow-roll estándar. En particular, el estudio de la formación de Agujeros Negros Primordiales (PBHs) exige una resolución numérica precisa en escalas mucho más pequeñas (grandes valores de $k$, del orden de $k\gtrsim 10^{7}\,{\rm Mpc}^{-1}$), donde las aproximaciones analíticas suelen fallar debido a la transición a fases de Ultra-Slow-Roll. Con el objetivo de ofrecer una herramienta versátil, modular y de fácil integración con el ecosistema científico de Python, presentamos PrimordialPy. Esta librería no solo permite la exploración de una gama arbitraria de potenciales de un solo campo, sino que automatiza el cálculo del espectro de potencias primordial $\mathcal{P}_\mathcal{R}(k)$ resolviendo las ecuaciones de Mukhanov-Sasaki y computando, de manera autoconsistente, la abundancia y distribución de masa de PBHs resultantes, y su consistencia con las restricciones observacionales actuales.
 
 
 
 
-\section{Structure of the library}
-
-
-\section{Examples}
-  
-  \subsection{Starobinsky inflation}
-  \subsection{$\alpha$-attractors}
-  \subsection{KKLT inflation with a bump}
 
 
 
-\bibliography{biblio.bib}
+
+\section{Theoretical framework}
+\label{sec2}
+
+    \subsection{Background dynamics}
+    \subsection{Perturbations}
+    \subsection{PBH formation}
+    %\subsection{Scalar-induced GW}
+
+
+\section{Numerical implemention}
+\label{sec3}
+
+    \subsection{Solver structure}
+    \subsection{Workflow}
+
+\section{Validation and benchmarks}
+\label{sec4}
+
+    \subsection{Consistency check}
+    \subsection{Precision}
+
+\section{Applications}
+\label{sec5}
+
+    \subsection{Starobinsky inflation}
+    \subsection{PBH abundance in alpha-attractors}
+    \subsection{PBH abundance in KKLT inflation}
+    \subsection{Constraints}
+
+
+\section{Installation and usage}
+\label{sec6}
+
+
+\section{Conclusions}
+\label{sec7}
+
+
+\bibliography{Primordialpy.bib}
 
 %%%%%%%%%% END TODO: BIBLIOGRAPHY
 

@@ -1,4 +1,4 @@
-\begin{thebibliography}{}
+\begin{thebibliography}{1}
 \providecommand{\url}[1]{\texttt{#1}}
 \providecommand{\urlprefix}{URL }
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -6,5 +6,60 @@
   \providecommand{\doi}{doi:\discretionary{}{}{}\begingroup
   \urlstyle{rm}\Url}\fi
 \providecommand{\eprint}[2][]{\url{#2}}
+
+\bibitem{guth1981}
+A.~H. Guth,
+\newblock \emph{Inflationary universe: {{A}} possible solution to the horizon
+  and flatness problems} \textbf{23}(2), 347,
+\newblock \doi{10.1103/PhysRevD.23.347}.
+
+\bibitem{Linde1982}
+A.~Linde,
+\newblock \emph{A new inflationary universe scenario: {{A}} possible solution
+  of the horizon, flatness, homogeneity, isotropy and primordial monopole
+  problems} \textbf{108}(6), 389,
+\newblock \doi{10.1016/0370-2693(82)91219-9}.
+
+\bibitem{starobinsky1980}
+A.~Starobinsky,
+\newblock \emph{A new type of isotropic cosmological models without
+  singularity} \textbf{91}(1), 99,
+\newblock \doi{10.1016/0370-2693(80)90670-X}.
+
+\bibitem{Starobinsky_1979}
+A.~A. Starobinsky,
+\newblock \emph{Spectrum of relict gravitational radiation and the early state
+  of the universe} \textbf{30}, 682.
+
+\bibitem{varun1990}
+V.~Sahni,
+\newblock \emph{Energy density of relic gravity waves from inflation}
+  \textbf{42}(2), 453,
+\newblock \doi{10.1103/PhysRevD.42.453}.
+
+\bibitem{Huston_2009}
+I.~Huston and K.~A. Malik,
+\newblock \emph{Numerical calculation of second order perturbations}
+  \textbf{2009}(09), 019,
+\newblock \doi{10.1088/1475-7516/2009/09/019}.
+
+\bibitem{Hazra2013}
+D.~K. Hazra, L.~Sriramkumar and J.~Martin,
+\newblock \emph{{{BINGO}}: A code for the efficient computation of the scalar
+  bi-spectrum} \textbf{2013}(05), 026,
+\newblock \doi{10.1088/1475-7516/2013/05/026}.
+
+\bibitem{Hergt2022}
+L.~T. Hergt, F.~J. Agocs, W.~J. Handley, M.~P. Hobson and A.~N. Lasenby,
+\newblock \emph{{Finite inflation in curved space}},
+\newblock Physical Review D \textbf{106}(6), 063529 (2022),
+\newblock \doi{10.1103/PhysRevD.106.063529},
+\newblock \eprint{2205.07374}.
+
+\bibitem{Siddharth2024}
+S.~S. Bhatt, S.~S. Mishra, S.~Basak and S.~N. Sahoo,
+\newblock \emph{Numerical simulations of inflationary dynamics: {{Slow}} roll
+  and beyond} p.~42,
+\newblock \doi{10.21468/SciPostPhysCodeb.42}.
 
 \end{thebibliography}

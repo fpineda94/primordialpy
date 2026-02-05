@@ -603,9 +603,9 @@ class Perturbations:
         
         # Set filename
         if filename is None:
-            filename = f'spectrum_{spectrum}.png'
-        elif not filename.endswith('.png'):
-            filename += '.png'
+            filename = f'spectrum_{spectrum}.pdf'
+        elif not filename.endswith('.pdf'):
+            filename += '.pdf'
         
         ax1.legend(loc='best')
         plt.tight_layout()
