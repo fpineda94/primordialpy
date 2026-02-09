@@ -1,6 +1,6 @@
 # primordialpy
 
-A Python library for computing inflationary dynamics, primordial perturbations and PBHs abundances from any single-field inflation model. 
+A Python library for computing inflationary dynamics, primordial perturbations, PBHs abundances and signal of Second-order induced GW from any single-field inflation model. 
 
 ## Description
 
@@ -10,6 +10,7 @@ A Python library for computing inflationary dynamics, primordial perturbations a
 - Compute scalar and tensor primordial perturbations
 - Determine and plot the primordial power spectrum 
 - Estime the abundance of PBHs for inflationary models
+- Compute the signal of induced-GW
 
 ## Instalation
 
@@ -61,7 +62,7 @@ pert.Plot_spectrum(dpi = 100, spectrum = 'scalar', save = True)
 
 - **Intuitive interface**: Define inflationary scenarios using mathematical expressions in text
 - **Flexibility**: Compatible with any single-field inflation model
-- **Complete calculations**: From the background dynamics to the formation of PBHs
+- **Complete calculations**: From the background dynamics to the formation of PBHs and beyond
 - **Visualization**: Integrated tools for graphing results
 
 ## Project structure
@@ -69,9 +70,10 @@ pert.Plot_spectrum(dpi = 100, spectrum = 'scalar', save = True)
 ```
 primordialpy/
 ├── primordialpy/
-│   ├── background.py        # Background
+│   ├── background.py       # Background
 │   ├── model.py            # Definition of potentials
 │   ├── perturbations.py    # Perturbation calculation
+│   ├── inducedGW.py        # GW signal calculation
 │   └── ...
 ├── examples/               # Notebooks with examples
 ├── constraints_data/       # Observational restriction data

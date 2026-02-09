@@ -89,7 +89,7 @@ class PBHConstraints:
                 color='dimgray', fontsize=9, 
                 ha='center', va='bottom', rotation=0)
 
-    def plot_with_model(self, model: PBHAbundance, label = None, filename='constraints_check.png'):
+    def plot_constraints(self, model: PBHAbundance, label = None, filename='constraints_check.png'):
      
         try:
             from .plot_style import style
@@ -112,7 +112,7 @@ class PBHConstraints:
             label=label,
             ylim_bottom=1e-10 
         )
-        ax.set_xlim(1e-20, 1e3)
+        ax.set_xlim(1e-18, 1e3)
         ax.set_ylim(1e-10, 2.0)
         
         ax.legend(loc='lower left', frameon=False)
@@ -121,4 +121,4 @@ class PBHConstraints:
         save_path = os.path.join('Figures', filename)
         os.makedirs('Figures', exist_ok=True)
         plt.savefig(save_path, bbox_inches='tight', dpi=300)
-        print(f"Gráfico guardado en: {save_path}")
+        print(f"Figure saved to: {save_path}")

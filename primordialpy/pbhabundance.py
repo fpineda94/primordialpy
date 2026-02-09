@@ -11,7 +11,14 @@ class PBHAbundance:
     Calculates PBH abundance from a generic inflationary model.
     """
 
-    def __init__(self, perturbations: Perturbations, delta_c, gamma, gstar, window: str = "gaussian"):
+    def __init__(
+        self, 
+        perturbations: Perturbations, 
+        delta_c, 
+        gamma, 
+        gstar, 
+        window: str = "gaussian"
+        ):
         
         self.window = window
         self.pert = perturbations
