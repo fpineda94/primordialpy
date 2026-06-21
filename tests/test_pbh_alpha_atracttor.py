@@ -1,9 +1,9 @@
 import pytest
 import numpy as np
-from primordialpy.model import PotentialFunction
-from primordialpy.background import Background
-from primordialpy.perturbations import Perturbations
-from primordialpy.pbhabundance import PBHAbundance
+from src.primordialpy.model import PotentialFunction
+from src.primordialpy.background import Background
+from src.primordialpy.perturbations import Perturbations
+from src.primordialpy.pbhabundance import PBHAbundance
 
 
 def test_pbh_alpha_atracttor_inflation():

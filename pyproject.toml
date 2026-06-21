@@ -51,8 +51,8 @@ dev = [
 ]
 
 
-[tool.setuptools]
-packages = ["primordialpy"]
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.setuptools.package-data]
 primordialpy = [
