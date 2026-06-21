@@ -32,10 +32,28 @@ class Potential(ABC):
 
 
 class PotentialFunction(Potential):
+
     """
     Concrete implementation of the Potential interface using symbolic expressions.
-    """
 
+    Parameters
+    ----------
+    potential_func : Callable
+        Numerical function for V(phi).
+    derivative_func : Callable
+        Numerical function for dV/dphi.
+    second_derivative_func : Callable
+        Numerical function for d²V/dphi².
+    expr_str : str, optional
+        String representation of the symbolic expression.
+
+    Examples
+    --------
+    >>> V = PotentialFunction.function("m**2 * phi**2 / 2", {"m": 1.0})
+    >>> V(1.0)
+    0.5
+    """
+    
     def __init__(self, 
                  potential_func: Callable, 
                  derivative_func: Callable, 
@@ -47,6 +65,9 @@ class PotentialFunction(Potential):
         self._second_derivative_func = second_derivative_func
         self.expr_str = expr_str 
 
+    def __repr__(self):
+        return f"PotentialFunction(expr='{self.expr_str}')"
+    
     def evaluate(self, phi):
         return self._potential_func(phi)
 
@@ -55,6 +76,8 @@ class PotentialFunction(Potential):
     
     def second_derivative(self, phi):
         return self._second_derivative_func(phi)
+
+
 
     @classmethod
     def function(cls, potential_expr_str: str, param_values: Optional[Dict[str, float]] = None):
@@ -75,7 +98,7 @@ class PotentialFunction(Potential):
             provided_params = set(param_values.keys())
             if not free_symbols.issubset(provided_params):
                 missing = free_symbols - provided_params
-                raise ValueError(f"Faltan valores para los parámetros: {missing}")
+                raise ValueError(f"Missing parameter values: {missing}")
 
         
             dV_expr = sp.diff(V_expr, phi)
@@ -91,7 +114,7 @@ class PotentialFunction(Potential):
             dV_func = sp.lambdify(phi, dV_expr_sub, modules=['numpy'])
             d2V_func = sp.lambdify(phi, d2V_expr_sub, modules=['numpy'])
             
-        except Exception as e:
-            raise ValueError(f"Error interpretando el potencial: {e}")
+        except (sp.SympifyError, TypeError) as e:
+            raise ValueError(f"Invalid potential expression '{potential_expr_str}': {e}")
 
         return cls(V_func, dV_func, d2V_func, expr_str=potential_expr_str)

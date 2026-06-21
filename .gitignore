@@ -219,5 +219,6 @@ pyrightconfig.json
 
 # VS Code workspace files
 *.code-workspace
+*.vscode
 
 # End of https://www.toptal.com/developers/gitignore/api/python,macos,jupyternotebooks
