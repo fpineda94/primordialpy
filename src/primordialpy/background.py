@@ -2,6 +2,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 from scipy.interpolate import interp1d
 from primordialpy.model import Potential
+import os
 
 
 
@@ -23,6 +24,22 @@ class Background:
                   N_fin=100, 
                   dphidN_0=None):
         
+        """
+        Parameters
+        ----------
+        potential : Potential
+            Inflationary potential instance.
+        phi0 : float
+            Initial value of the inflaton field.
+        N_in : float, optional
+            Initial number of e-folds. Default is 0.
+        N_fin : float, optional
+            Maximum number of e-folds. Default is 100.
+        dphidN_0 : float, optional
+            Initial field velocity. If None, slow-roll initial
+            conditions are assumed.
+        """
+        
         self.potential = potential
         self.phi0 = phi0
         self.N_in = N_in
@@ -38,7 +55,7 @@ class Background:
         kinetic_term = 3 - 0.5 * dphidN**2
         return np.sqrt(V / kinetic_term)
 
-    def _EDOs(self, N, Y):
+    def _ODEs(self, N, Y):
 
         phi, dphidN = Y  
         H = self._H(phi, dphidN)
@@ -64,8 +81,6 @@ class Background:
         """
     
         if self.dphidN_0 is None:
-            # Slow-roll initial condition: 3H*dot_phi approx -V'
-            # dphi/dN approx -V'/V
             V0 = self.potential.evaluate(self.phi0)
             dV0 = self.potential.first_derivative(self.phi0)
             y_phi_prime = -dV0 / V0
@@ -79,7 +94,7 @@ class Background:
 
 
         self.solution = solve_ivp(
-            self._EDOs, 
+            self._ODEs, 
             [self.N_in, self.N_fin],
             Y0,
             t_eval=N_eval,
@@ -96,7 +111,7 @@ class Background:
     def data(self):
 
         if self.solution is None:
-            raise RuntimeError("Model not solved yet. Call .solve() first.")
+            raise RuntimeError("Model not solved yet. Call .solver() first.")
         
         if self._derived_data is not None:
             return self._derived_data
@@ -120,18 +135,42 @@ class Background:
         }
         return self._derived_data
     
-            
-    
-    def interpolation(self, x ='N'):
 
-        coords = {'N': self.data()['N']}
-        if x not in coords:
-            raise ValueError("with_respect_to must be 'N' o 'Ne'")
 
-        x_vals = coords[x]
+
+    def save_data(self, filename: str = "background.dat", path: str = "."):
+
+        """
+        Parameters
+        ----------
+        filename : str, optional
+            Output filename. Default is 'background.dat'.
+        path : str, optional
+            Directory where the file will be saved. Default is current directory.
+        """
+        
+        if self.solution is None:
+            raise RuntimeError("Model not solved yet. Call .solver() first.")
+        
+        full_path = os.path.join(path, filename)
+        
+        d = self.data()
+        header = "N  phi  dphidN  H  a  aH  eps_H  eta_H"
+        data_matrix = np.column_stack([
+            d['N'], d['phi'], d['dphidN'], d['H'],
+            d['a'], d['aH'], d['eps_H'], d['eta_H']
+        ])
+        
+        np.savetxt(full_path, data_matrix, header=header, comments='# ')
+        print(f"Saved to {full_path}")
+                
+        
+    # Si por ahora solo va N, simplificalo:
+    def interpolation(self):
+        x_vals = self.data()['N']
         variables = ['phi', 'dphidN', 'H', 'a', 'aH', 'eps_H', 'eta_H']
         return {
-            var: interp1d(x_vals, self.data()[var], kind='cubic', fill_value='extrapolate', bounds_error=False)
-        for var in variables
+            var: interp1d(x_vals, self.data()[var], kind='cubic', 
+                        fill_value='extrapolate', bounds_error=False)
+            for var in variables
         }
-
