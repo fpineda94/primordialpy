@@ -165,12 +165,20 @@ class Background:
         print(f"Saved to {full_path}")
                 
         
-    # Si por ahora solo va N, simplificalo:
-    def interpolation(self):
+    def interpolation(self, x: str = 'N'):
+        """
+        Parameters
+        ----------
+        x : str, optional
+            Independent variable. Only 'N' is supported. Default is 'N'.
+        """
+        if x not in ['N']:
+            raise ValueError(f"x must be 'N'")
+        
         x_vals = self.data()['N']
         variables = ['phi', 'dphidN', 'H', 'a', 'aH', 'eps_H', 'eta_H']
         return {
-            var: interp1d(x_vals, self.data()[var], kind='cubic', 
+            var: interp1d(x_vals, self.data()[var], kind='cubic',
                         fill_value='extrapolate', bounds_error=False)
             for var in variables
         }

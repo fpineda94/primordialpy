@@ -935,54 +935,10 @@ class Perturbations:
 
         return P_s, P_t, r
 
-    # @property
-    # def data(self):
-        
-    #     '''
-    #     Extract the data of the commuting curvature perturbation and its derivative as a function of the number of e-folds N
-    #     and store them in a dictionary.
-    #     '''
-
-    #     if self.solution is None:
-    #         raise ValueError('First you have to solve the system with solver method')
-    #     k = self.k_CMB
-    #     N = self.solution.t
-    #     R_re = self.solution.y[2]
-    #     dRdN_re = self.solution.y[3] 
-    #     R_im = self.solution.y[4]
-    #     dRdN_im = self.solution.y[5]
-    #     h_re = self.solution.y[6]
-    #     dhdN_re = self.solution.y[7]
-    #     h_im = self.solution.y[8]
-    #     dhdN_im = self.solution.y[9]
-
-    #     #Power spectrum
-    #     P_s = k**3*(R_re**2 + R_im**2)/(2*np.pi**2)
-    #     P_t = 8*k**3*(h_re**2 + h_im**2)/(2*np.pi**2)
-        
-
-    #     #Primordial power spectrum and tensor to scalar ratio at pivot scale
-    #     Y_hc = self.solution.sol(self.N_shs(k = k))
-
-    #     Rk_re_hc = Y_hc[2]
-    #     Rk_im_hc = Y_hc[4]
-    #     h_re_hc = Y_hc[6]
-    #     h_im_hc = Y_hc[8]
-
-
-    #     P_s_pivot = k**3*(Rk_re_hc**2 + Rk_im_hc**2)/(2*np.pi**2)
-    #     P_t_pivot = 8*k**3*(h_re_hc**2 + h_im_hc**2)/(2*np.pi**2)
-    #     r_pivot = P_t_pivot/P_s_pivot
-
-        
-
-    #     return {'N': N, 'R_re' : R_re, 'dRdN_re': dRdN_re ,'R_im': R_im, 'dRdN_im': dRdN_im, 
-    #             'h_re' : h_re, 'dhdN_re' : dhdN_re, 'h_im' : h_im, 'dhdN_im' : dhdN_im,'P_s': P_s, 
-    #                 'P_t': P_t,  'P_s_pivot': P_s_pivot, 'P_t_pivot': P_t_pivot, 'r_pivot': r_pivot}
-    
 
 
     def _Compute_Power_spectrum(self, k, N_hc_val=None):
+
         """
         Compute P_s and P_t for a given wavenumber k.
 
@@ -994,6 +950,7 @@ class Perturbations:
             Precomputed horizon-crossing e-fold for this k.
             If None, it is computed internally via brentq (slower).
         """
+
         # Use precomputed N_hc if available to avoid a redundant brentq call
         if N_hc_val is None:
             N_hc_val = self.N_hc(k)[0]
@@ -1036,11 +993,13 @@ class Perturbations:
         return P_s, P_t
 
 
-
     def Power_spectrum(self, save=False, filename=None):
-        # Pre-compute all horizon-crossing e-folds in a single serial pass.
-        # Each brentq call is cheap, but doing 1000 of them inside a parallel
-        # worker would repeat work and add IPC overhead. One vectorised sweep is faster.
+
+        """ 
+        Pre-compute all horizon-crossing e-folds in a single serial pass. 
+        Each brentq call is cheap, but doing 1000 of them inside a parallel
+        """
+
         N_hc_list = self.N_hc()           # list of (N_val, k_val) for all k_modes
         self._N_hc_cache = N_hc_list      # cache for reuse by Plot_spectrum
         N_hc_vals = [N for N, _ in N_hc_list]   # aligned with self.k_modes
@@ -1102,161 +1061,3 @@ class Perturbations:
         n_t_pivot = float(n_t_interp(k_pivot))
 
         return {'n_s': n_s_pivot, 'n_t': n_t_pivot}
-
-    
-    
-    # def Plot_spectrum(self, dpi, spectrum, save=False, filename=None, show_efolds=True):
-    #     """
-    #     Plots the power spectrum with optional dual axis showing e-folds at horizon crossing.
-        
-    #     Parameters:
-    #     -----------
-    #     show_efolds : bool, optional
-    #         If True, adds a secondary x-axis showing the number of e-folds at horizon crossing.
-    #     """
-    #     if not hasattr(self, '_P_s_array') or not hasattr(self, '_P_t_array'):
-    #         raise ValueError('First you must run the Power_spectrum method to calculate the spectra.')
-        
-    #     style(dpi=dpi)
-        
-    #     # Create figure and primary axis
-    #     fig, ax1 = plt.subplots(figsize=(10, 6))
-        
-    #     if spectrum == 'scalar':
-    #         idx_peak = np.argmax(self._P_s_array)
-    #         ax1.loglog(self.k_modes, self._P_s_array)
-
-    #         k_peak = self.k_modes[idx_peak]
-    #         k_peak_str = r"{:.2e}".format(k_peak).replace("e+0", "e").replace("e+","e").replace("e","\\times 10^{") + "}"
-    #         label_kpeak = r"$k_\text{peak} = " + k_peak_str + r"\, \text{Mpc}^{-1}$"
-            
-    #         if hasattr(self, 'scale') and self.scale == 'PBH':
-
-
-    #             ax1.axvline(k_peak, color='r', linestyle='dashed', 
-    #                     linewidth=1, label=label_kpeak)
-    #             ax1.axvspan(1e-4, 1e0, color='gray', alpha=0.2)
-    #             y_min, y_max = ax1.get_ylim()
-    #             y_text_pos = 10**(0.9 * np.log10(y_min) + 0.1 * np.log10(y_max))
-    #             ax1.text(
-    #                 x=np.sqrt(1e-3 * 1e-1),
-    #                 y=y_text_pos,
-    #                 s='PLANCK',
-    #                 ha='center',
-    #                 va='center',
-    #                 rotation=0,
-    #                 color='black'
-    #             )
-                
-    #             k_peak = self.k_modes[idx_peak]
-    #             N_peak, _ = self.N_hc(k=k_peak)
-    #             k_peak_str = r"{:.2e}".format(k_peak).replace("e", r"\times 10^{") + "}"
-    #             print(f'k_peak = {k_peak_str} Mpc^-1')
-    #             print(f'N_peak = {N_peak}')
-    #             print(f'P_s(k_peak) = {self._P_s_array[idx_peak]}')
-                
-    #         elif hasattr(self, 'scale') and self.scale == 'CMB':
-    #             ax1.set_xlim(1e-4, 1e0)
-    #             ax1.set_ylim(2e-9, 3e-9)
-                
-    #     elif spectrum == 'tensor':
-    #         ax1.loglog(self.k_modes, self._P_t_array)
-    #     else:
-    #         raise ValueError('Spectrum must be scalar or tensor')
-        
-    #     # Set labels for primary axis
-    #     ax1.set_xlabel(r'$k$ [Mpc$^{-1}$]')
-    #     if spectrum == 'scalar':
-    #         ax1.set_ylabel(r'$\mathcal{P}_\mathcal{R}(k)$')
-    #     elif spectrum == 'tensor':
-    #         ax1.set_ylabel(r'$\mathcal{P}_\mathcal{T}(k)$')
-
-
-    #     # Add secondary axis for e-folds if requested
-    #     if show_efolds:
-    #         ax2 = ax1.twiny()
-            
-    #         # Reuse cached N_hc values if available (already computed by Power_spectrum);
-    #         # otherwise compute them now (one brentq pass over all k_modes).
-    #         try:
-    #             if hasattr(self, '_N_hc_cache'):
-    #                 N_hc_results = self._N_hc_cache
-    #             else:
-    #                 N_hc_results = self.N_hc()
-                
-    #             # Filter out invalid results (NaN values)
-    #             valid_results = [(N, k) for N, k in N_hc_results if not np.isnan(N)]
-                
-    #             if valid_results:
-    #                 N_values = np.array([N for N, k in valid_results])
-    #                 k_values = np.array([k for N, k in valid_results])
-                    
-    #                 # Create a smooth interpolation for the secondary axis
-    #                 from scipy.interpolate import interp1d
-                    
-    #                 # Sort by N values for interpolation
-    #                 sorted_indices = np.argsort(N_values)
-    #                 N_sorted = N_values[sorted_indices]
-    #                 k_sorted = k_values[sorted_indices]
-                    
-    #                 # Create interpolation function (N -> k)
-    #                 N_to_k_interp = interp1d(N_sorted, k_sorted, kind='linear', 
-    #                                     bounds_error=False, fill_value='extrapolate')
-                    
-    #                 # Define nice e-fold tick positions
-    #                 N_min, N_max = N_sorted.min(), N_sorted.max()
-    #                 N_range = N_max - N_min
-                    
-    #                 # Create approximately 5-8 ticks
-    #                 if N_range > 50:
-    #                     N_step = 10
-    #                 elif N_range > 20:
-    #                     N_step = 5
-    #                 else:
-    #                     N_step = max(1, int(N_range / 6))
-                    
-    #                 N_ticks = np.arange(int(np.ceil(N_min)), int(np.floor(N_max)) + 1, N_step)
-                    
-    #                 # Convert N ticks to k values
-    #                 k_ticks = N_to_k_interp(N_ticks)
-                    
-    #                 # Filter ticks that are within the plot range
-    #                 x_min, x_max = ax1.get_xlim()
-    #                 valid_tick_mask = (k_ticks >= x_min) & (k_ticks <= x_max) & (~np.isnan(k_ticks))
-    #                 N_ticks_valid = N_ticks[valid_tick_mask]
-    #                 k_ticks_valid = k_ticks[valid_tick_mask]
-                    
-    #                 # Set up the secondary axis
-    #                 ax2.set_xscale('log')
-    #                 ax2.set_xlim(ax1.get_xlim())
-                    
-    #                 if len(k_ticks_valid) > 0:
-    #                     ax2.set_xticks(k_ticks_valid)
-    #                     ax2.set_xticklabels([f'{int(N)}' for N in N_ticks_valid])
-    #                     ax2.set_xlabel('e-folds $N$', fontsize=12)
-    #                 else:
-    #                     print("Warning: No valid e-fold ticks found for the current k range")
-    #             else:
-    #                 print("Warning: No valid horizon crossing data found")
-    #                 show_efolds = False
-                    
-    #         except Exception as e:
-    #             print(f"Warning: Could not create e-folds axis. Error: {e}")
-    #             show_efolds = False
-        
-    #     # Set filename
-    #     if filename is None:
-    #         filename = f'spectrum_{spectrum}.pdf'
-    #     elif not filename.endswith('.pdf'):
-    #         filename += '.pdf'
-        
-    #     ax1.legend(loc='best')
-    #     plt.tight_layout()
-        
-    #     if save:
-    #         filepath = os.path.join('Figures', filename)
-    #         plt.savefig(filepath, dpi=300, bbox_inches='tight')
-    #         print(f"Figure saved as: {filepath}")
-        
-    #     plt.show()
-
