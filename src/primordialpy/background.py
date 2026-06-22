@@ -138,7 +138,7 @@ class Background:
 
 
 
-    def save_data(self, filename: str = "background.dat", path: str = "."):
+    def save_background(self, filename: str = "background.dat", path: str = "."):
 
         """
         Parameters
