@@ -2,30 +2,55 @@ import numpy as np
 from scipy.interpolate import interp1d
 import os 
 import matplotlib.pyplot as plt
-
 from primordialpy.perturbations import Perturbations
 
 
 class PBHAbundance:
+    
     """
     Calculates PBH abundance from a generic inflationary model.
+
+    Can be initialized either from a Perturbations instance or 
+    directly from arrays of k modes and power spectrum values.
     """
 
     def __init__(
-        self, 
-        perturbations: Perturbations, 
-        delta_c, 
-        gamma, 
-        gstar, 
+        self,  
+        delta_c: float, 
+        gamma: float, 
+        gstar: float, 
+        perturbations: Perturbations = None,
+        k_modes: np.ndarray = None,
+        Ps: np.ndarray = None,
         window: str = "gaussian"
         ):
-        
-        self.window = window
-        self.pert = perturbations
 
-        # Power spectrum
-        self.Ps = self.pert._P_s_array
-        self.k_modes = self.pert.k_modes  # in Mpc^-1
+        #Validate input
+        if perturbations is None and (k_modes is None or Ps is None):
+            raise ValueError ('Either perturbations or both k_modes and Ps must be provided')
+        
+        if perturbations is not None and (k_modes is not None or Ps is not None):
+            raise ValueError('Provide either perturbations or k_modes/Ps, not both')
+        
+        if perturbations is not None:
+            if perturbations._P_s_array is None:
+                raise RuntimeError('Power spectrum not computed yet. Call .power_spectrum() first.')
+            
+            self.Ps = self.pert._P_s_array
+            self.k_modes = self.pert.k_modes  # in Mpc^-1
+        else: 
+            self.k_modes = np.asarray(k_modes)
+            self.Ps = np.asarray(Ps)
+            
+        
+
+        self.window = window   
+        self.delta_c = delta_c
+        self.gamma = gamma
+        self.gstar = gstar  
+        self.Msun = 1.0  # work in solar mass units
+
+        
         self.Ps_interp = interp1d(
             self.k_modes,
             self.Ps,
@@ -38,15 +63,6 @@ class PBHAbundance:
         self.P_peak = self.Ps[np.argmax(self.Ps)]
         self.k_peak = self.k_modes[np.argmax(self.Ps)]
 
-        # PBH parameters
-        self.delta_c = delta_c
-        self.gamma = gamma
-        self.gstar = gstar
-
-        # Units
-        self.Msun = 1.0  # work in solar mass units
-
-        # Folder creation
         os.makedirs("Data", exist_ok=True)
 
     # ---------------- Window functions ----------------
@@ -69,6 +85,7 @@ class PBHAbundance:
     # ---------------- Variance ----------------
 
     def sigma_squared(self, k):
+
         """
         Compute variance of density contrast at different scales (vectorized).
         """
@@ -76,14 +93,11 @@ class PBHAbundance:
         Pk = self.Ps_interp(k)  # interpolated spectrum
         ln_k = np.log(k)
 
-        # Crear grillas 2D: r[i], k[j]
         R, K = np.meshgrid(r, k, indexing="ij")
 
-        # Integrando en toda la grilla
         W = self._window_function(K * R)
         integrand = W**2 * (K * R) ** 4 * Pk
 
-        # Integramos sobre k (eje 1)
         integral = np.trapz(integrand, ln_k, axis=1)
 
         return (16.0 / 81.0) * integral
@@ -125,18 +139,6 @@ class PBHAbundance:
         print(f'fPBH_peak = {fPBH[idx_peak]}')
         print(fr'MPBH_peak = {mpbh_peak} M⊙')
 
-
-        if save:
-            if filename is None:
-                filename = 'abundance_PBHs_data.txt'
-            filepath = os.path.join('Data', filename)
-            header = (f'#Parameters: delta_c ={self.delta_c}, gamma = {self.gamma}, gstar = {self.gstar}'
-                      f'#Columns: mPBH [Msun, fPBH]')
-            np.savetxt(filepath, 
-                       np.column_stack([mpbh, fPBH]),
-                       header = header,
-                       fmt = '%.16e'
-                       )
         return mpbh, fPBH
 
 # ---------------- Plotting ----------------
