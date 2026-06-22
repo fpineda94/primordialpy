@@ -281,7 +281,7 @@ class Perturbations:
         return self.solution
     
 
-    def Power_spectra_pivot(self, k= None):
+    def power_spectra_pivot(self, k= None):
 
         if k is None:
             k = self.k_CMB
@@ -376,7 +376,7 @@ class Perturbations:
         N_hc_vals = [N for N, _ in N_hc_list]   # aligned with self.k_modes
 
         results = Parallel(n_jobs=-1)(
-            delayed(self._Compute_Power_spectrum)(k, N_hc_val)
+            delayed(self._compute_power_spectrum)(k, N_hc_val)
             for k, N_hc_val in tqdm(zip(self.k_modes, N_hc_vals),
                                     total=len(self.k_modes),
                                     desc="Computing P(k)")
@@ -422,7 +422,7 @@ class Perturbations:
         n_t_pivot = float(n_t_interp(k_pivot))
 
         return {'n_s': n_s_pivot, 'n_t': n_t_pivot}
-    
+
 
     def save_power_spectra(self, filename: str = 'power_spectra.dat', path: str = '.'):
         
@@ -438,6 +438,7 @@ class Perturbations:
         if self._P_s_array is None:
             raise RuntimeError('Power spectra not computed yet. Call .power_spectrum() first.')
         
+        os.makedirs(path, exist_ok=True)
         full_path = os.path.join(path, filename)
         
         header = "k  Ps  Pt"

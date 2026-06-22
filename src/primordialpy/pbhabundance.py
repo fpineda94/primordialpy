@@ -118,13 +118,12 @@ class PBHAbundance:
         """
         Relation between PBH mass and horizon mass in solar masses.
         """
-        kCMB = 0.05  # Mpc^-1
         M = 3.68*(self.gamma/0.2)*(self.gstar/10.75)**(-1/6)/(k/1e6)**2
         return M
 
     # ---------------- PBH abundance ----------------
 
-    def fPBH(self, save = False, filename = None):
+    def fPBH(self):
 
         k = self.k_modes
         mpbh = self.Mpbh(k)  # solar masses
@@ -140,6 +139,13 @@ class PBHAbundance:
         print(fr'MPBH_peak = {mpbh_peak} M⊙')
 
         return mpbh, fPBH
+    
+# ---------------- save ----------------
+
+    def save_pbh(self, filename = None, path = None):
+        pass
+
+
 
 # ---------------- Plotting ----------------
 

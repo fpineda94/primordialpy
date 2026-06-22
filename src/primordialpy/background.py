@@ -55,7 +55,7 @@ class Background:
         kinetic_term = 3 - 0.5 * dphidN**2
         return np.sqrt(V / kinetic_term)
 
-    def _ODEs(self, N, Y):
+    def _odes(self, N, Y):
 
         phi, dphidN = Y  
         H = self._H(phi, dphidN)
@@ -94,7 +94,7 @@ class Background:
 
 
         self.solution = solve_ivp(
-            self._ODEs, 
+            self._odes, 
             [self.N_in, self.N_fin],
             Y0,
             t_eval=N_eval,
@@ -152,6 +152,7 @@ class Background:
         if self.solution is None:
             raise RuntimeError("Model not solved yet. Call .solver() first.")
         
+        os.makedirs(path, exist_ok=True)
         full_path = os.path.join(path, filename)
         
         d = self.data()
@@ -164,6 +165,9 @@ class Background:
         np.savetxt(full_path, data_matrix, header=header, comments='# ')
         print(f"Saved to {full_path}")
                 
+
+
+
         
     def interpolation(self, x: str = 'N'):
         """
