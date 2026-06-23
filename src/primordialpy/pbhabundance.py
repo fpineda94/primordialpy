@@ -35,7 +35,8 @@ class PBHAbundance:
         if perturbations is not None:
             if perturbations._P_s_array is None:
                 raise RuntimeError('Power spectrum not computed yet. Call .power_spectrum() first.')
-            
+                
+            self.pert = perturbations        
             self.Ps = self.pert._P_s_array
             self.k_modes = self.pert.k_modes  # in Mpc^-1
         else: 
@@ -98,7 +99,7 @@ class PBHAbundance:
         W = self._window_function(K * R)
         integrand = W**2 * (K * R) ** 4 * Pk
 
-        integral = np.trapz(integrand, ln_k, axis=1)
+        integral = np.trapezoid(integrand, ln_k, axis=1)
 
         return (16.0 / 81.0) * integral
 
@@ -139,7 +140,7 @@ class PBHAbundance:
         print(fr'MPBH_peak = {mpbh_peak} M⊙')
 
         self.mpbh = mpbh
-        self.fPBH = fPBH
+        self.fPBH_arr = fPBH
 
         return mpbh, fPBH
     
@@ -159,14 +160,14 @@ class PBHAbundance:
         if self.mpbh is None:
             raise RuntimeError('PBH abundance not computed yet. Call .fPBH() first')
         
-        if self.fPBH is None:
+        if self.fPBH_arr is None:
             raise RuntimeError('PBH abundance not computed yet. Call .fPBH() first')
         
         os.makedirs(path, exist_ok=True)
         full_path =os.path.join(path, filename)
 
         header = "MPBH fPBH"
-        data = np.column_stack([self.mpbh, self.fPBH])
+        data = np.column_stack([self.mpbh, self.fPBH_arr])
         np.savetxt(full_path, data, header=header, comments='#')
         print(f'Saved to {full_path}')
 
@@ -193,7 +194,7 @@ class PBHAbundance:
             Arguments passed to ax.loglog (color, linestyle, label, etc.).
         """
         
-        m_pbh, f_pbh = self.fPBH(save=False)
+        m_pbh, f_pbh = self.fPBH()
         
         if ax is None:
             try:
