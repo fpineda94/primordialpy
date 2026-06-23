@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class PBHConstraints:
+    
     """
     Manages the loading and plotting of observational constraints on PBH abundance.
 

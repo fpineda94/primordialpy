@@ -138,12 +138,38 @@ class PBHAbundance:
         print(f'fPBH_peak = {fPBH[idx_peak]}')
         print(fr'MPBH_peak = {mpbh_peak} M⊙')
 
+        self.mpbh = mpbh
+        self.fPBH = fPBH
+
         return mpbh, fPBH
     
 # ---------------- save ----------------
 
-    def save_pbh(self, filename = None, path = None):
-        pass
+    def save_pbh(self, filename: str = 'pbh_abundance.dat', path: str = "."):
+        
+        """
+        Parameters
+        ----------
+        filename : str, optional
+            Output filename. Default is 'pbh_abundance.dat'.
+        path : str, optional
+            Directory where the file will be saved. Default is current directory.
+        """
+
+        if self.mpbh is None:
+            raise RuntimeError('PBH abundance not computed yet. Call .fPBH() first')
+        
+        if self.fPBH is None:
+            raise RuntimeError('PBH abundance not computed yet. Call .fPBH() first')
+        
+        os.makedirs(path, exist_ok=True)
+        full_path =os.path.join(path, filename)
+
+        header = "MPBH fPBH"
+        data = np.column_stack([self.mpbh, self.fPBH])
+        np.savetxt(full_path, data, header=header, comments='#')
+        print(f'Saved to {full_path}')
+
 
 
 
