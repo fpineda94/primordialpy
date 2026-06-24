@@ -1,5 +1,5 @@
 import numpy as np 
-from scipy.integrate import solve_ivp, odeint
+from scipy.integrate import solve_ivp
 from scipy.optimize import brentq 
 from joblib import Parallel, delayed
 from tqdm import tqdm
@@ -7,6 +7,81 @@ import os
 
 from primordialpy.background import Background
 from primordialpy.model import Potential
+
+# =====================================================================
+# EXTERNAL FUNCTIONS (Optimized for Multiprocessing)
+# =====================================================================
+
+def solver_k_mode(k, N_hc_val, N_inside, Nend, Y0, scale, ai_cached, H_func, V_func, dV_func):
+    
+    """
+    It solves the perturbation system for a single mode. 
+    Being outside the class avoids the serialization overhead (pickling) of joblib.
+    """
+
+    if np.isnan(N_hc_val):
+        return np.nan, np.nan
+
+    N_ini_val = N_hc_val - N_inside
+    N_end_val = min(N_hc_val + 5.0, Nend)
+
+    def ode_func(N, Y):
+        [phi, dphidN, Rk_re, Rk_re_N, Rk_im, Rk_im_N, hk_re, hk_re_N, hk_im, hk_im_N] = Y
+        
+        # Background
+        V = V_func(phi)
+        dVdphi = dV_func(phi)
+        d2phidN2 = -(3 - 0.5*(dphidN**2))*dphidN - (6 - (dphidN**2))*dVdphi/(2*V)
+
+        # Perturbations
+        a = ai_cached * np.exp(N)
+        H = H_func(N) 
+
+        z = a * dphidN
+        z_N = a * (dphidN + d2phidN2)
+
+        k_aH_sq = (k / (a * H))**2
+        term_s = 1 - 0.5*(dphidN**2) + 2*(z_N/z)
+        term_t = 3 - 0.5*(dphidN**2)
+
+        # Scalar perturbations
+        Rk_re_NN = -term_s * Rk_re_N - k_aH_sq * Rk_re
+        Rk_im_NN = -term_s * Rk_im_N - k_aH_sq * Rk_im
+
+        # Tensor perturbations
+        hk_re_NN = -term_t * hk_re_N - k_aH_sq * hk_re
+        hk_im_NN = -term_t * hk_im_N - k_aH_sq * hk_im
+
+        return [dphidN, d2phidN2, Rk_re_N, Rk_re_NN, Rk_im_N, Rk_im_NN, hk_re_N, hk_re_NN, hk_im_N, hk_im_NN]
+
+    if scale == 'CMB':
+        tol = 1e-10
+    elif scale == 'PBH':
+        tol = 1e-10  
+
+    sol = solve_ivp(
+        ode_func,
+        t_span=(N_ini_val, N_end_val),
+        y0=Y0,
+        method='LSODA',          
+        rtol=tol,
+        atol=1e-16/k,    
+        dense_output=False,
+        max_step=np.inf,
+    )
+
+    if not sol.success:
+        return np.nan, np.nan
+
+    Y_hc = sol.y[:, -1]          
+
+    Rk_re, Rk_im = Y_hc[2], Y_hc[4]
+    hk_re,  hk_im = Y_hc[6], Y_hc[8]
+
+    P_s = k**3 * (Rk_re**2 + Rk_im**2) / (2 * np.pi**2)
+    P_t = 8 * k**3 * (hk_re**2 + hk_im**2) / (2 * np.pi**2)
+
+    return P_s, P_t
 
 
 
@@ -65,28 +140,32 @@ class Perturbations:
         Plots tensor-to-scalar ratio r(k).
     """
 
-    def __init__(self, potential : Potential, background: Background, scale: str, N_CMB: float,  k_CMB: float = 0.05,  N_inside: float = 5):
-
-        #Basic configuration
+    def __init__(self,
+                 potential : Potential, 
+                 background: Background, 
+                 scale: str, 
+                 N_CMB: float,  
+                 k_CMB: float = 0.05, 
+                N_inside: float = 5):
+        
+        # Basic configuration
         self.potential = potential     
         self.background = background
         self.scale = scale
         self.solution = None
         self._data_interpolated()
 
-
-        #Efolds configuration
+        # Efolds configuration
         self.N_CMB = N_CMB 
         self.N_inside = N_inside 
         self.Nend = self.background.data()['N'][-1]
         self.Nhc = self.Nend - self.N_CMB
      
-        #Configuration of k modes
-        self.k_CMB = k_CMB #CMB scale
+        # Configuration of k modes
+        self.k_CMB = k_CMB 
         self.k_pivot = self.aH(self.Nhc) 
-        self.norma = self.k_CMB/self.k_pivot    #Normalization factor to convert k modes in Mpc^-1
+        self.norma = self.k_CMB/self.k_pivot    
 
-        # Cache _ai once here instead of recomputing it on every ODE step
         self._ai_cached = self.k_CMB / (np.exp(self.Nhc) * self.H(self.Nhc))
 
         if hasattr(self, 'scale') and self.scale == 'CMB':
@@ -94,9 +173,7 @@ class Perturbations:
         elif hasattr(self, 'scale') and self.scale == 'PBH':
                 self.k_min, self.k_max = self.norma*self.aH(self.Nhc - 7), self.norma*self.aH(self.Nend - 4)
       
-        self.k_modes = np.logspace(np.log10(self.k_min), np.log10(self.k_max), num = 1000)  #List modes in Mpc^-1
-
-
+        self.k_modes = np.logspace(np.log10(self.k_min), np.log10(self.k_max), num = 1000)
 
     def _data_interpolated(self, vars = None, x = 'N'):
         if vars is None:
@@ -109,59 +186,35 @@ class Perturbations:
     
     @property
     def _ai(self):
-        '''
-        Initial scale factor fixed so that the pivot mode (k_CMB) exits the Hubble radius at N_hc.
-        Cached at construction time to avoid recomputing on every ODE step.
-        '''
         return self._ai_cached
     
-
     def _z(self, a, dphidN):
         return a*dphidN
     
 
-
     def _odes(self, N, Y, k):
-
-        r""" 
-        System of equations including the background and perturbation equations
-        primordial for $\mathchal{R}_k$ and tensor modes $h_k$. We separate real and imaginary parts for
-        numerical stability. 
-        """
-
         [phi, dphidN, Rk_re, Rk_re_N, Rk_im, Rk_im_N, hk_re, hk_re_N, hk_im, hk_im_N] = Y
         
-        #Background
         V = self.potential.evaluate(phi)
         dVdphi = self.potential.first_derivative(phi)
         d2phidN2 = -(3 - 0.5*(dphidN**2))*dphidN - (6 - (dphidN**2))*dVdphi/(2*V)
 
-        #Perturbations — use cached _ai and interpolated H to avoid redundant recomputation
         a = self._ai_cached * np.exp(N)
-        H = self.H(N)                    # interpolated background H(N), faster than sqrt(V/...)
+        H = self.H(N)                    
 
         z = self._z(a, dphidN)
         z_N = a*(dphidN + d2phidN2)
 
-        #Scalar perturbations
         Rk_re_NN = - (1 - 0.5*(dphidN**2) + 2*(z_N/z))*Rk_re_N - ((k/(a*H))**2)*Rk_re
         Rk_im_NN = - (1 - 0.5*(dphidN**2) + 2*(z_N/z))*Rk_im_N - ((k/(a*H))**2)*Rk_im
 
-        #Tensor perturbations
         hk_re_NN = - (3-(dphidN**2)*0.5)*hk_re_N-((k/(a*H))**2)*hk_re
         hk_im_NN = - (3-(dphidN**2)*0.5)*hk_im_N-((k/(a*H))**2)*hk_im
 
-
         return[dphidN, d2phidN2, Rk_re_N, Rk_re_NN, Rk_im_N, Rk_im_NN, hk_re_N, hk_re_NN, hk_im_N, hk_im_NN]
 
-    
 
     def N_hc(self, k=None, include_invalid=True):
-        '''
-        Find the efold N at which the k-mode crosses the horizon.
-        Returns (N_hc, k) for each mode.
-        '''
-
         def func_to_root(N_val, k_val):
             return k_val - self.norma*self.aH(N_val)
 
@@ -170,7 +223,7 @@ class Perturbations:
                 N_val = brentq(lambda N: func_to_root(N, k), 0, self.Nend)
                 return (N_val, k)
             except ValueError as e:
-                print(f"Warning: Could not find horizon crossing for k={k} in [0, {self.Nend}]. Error: {e}")
+                print(f"Warning: Could not find horizon crossing for k={k}. Error: {e}")
                 return (np.nan, k) if include_invalid else None
         else:
             results = []
@@ -179,58 +232,40 @@ class Perturbations:
                     N_val = brentq(lambda N: func_to_root(N, k_val), 0, self.Nend)
                     results.append((N_val, k_val))
                 except ValueError as e:
-                    print(f"Warning: Could not find horizon crossing for k={k_val} in [0, {self.Nend}]. Error: {e}")
+                    print(f"Warning: Could not find horizon crossing for k={k_val}. Error: {e}")
                     if include_invalid:
                         results.append((np.nan, k_val))
             return results
+        
+
             
-
-
     def N_ini(self, k=None):
-        '''
-        Find the efold N_ini for a given k mode, 5 efolds before horizon crossing.
-        '''
         if k is not None:
             n_hc = self.N_hc(k)[0] 
             return n_hc - self.N_inside if not np.isnan(n_hc) else np.nan
         else:
-            return [
-                N_hc - self.N_inside if not np.isnan(N_hc) else np.nan
-                for N_hc, _ in self.N_hc()
-        ]
+            return [N_hc - self.N_inside if not np.isnan(N_hc) else np.nan for N_hc, _ in self.N_hc()]
+        
 
 
     def N_shs(self, k =None):
-
         if k is not None:
             n_hc = self.N_hc(k)[0]
             return n_hc + 5 if not np.isnan(n_hc) else np.nan
         else:
-            return [N_hc + 5 if not np.isnan(N_hc) else np.nan
-                    for N_hc, _ in self.N_hc()]
-
-
+            return [N_hc + 5 if not np.isnan(N_hc) else np.nan for N_hc, _ in self.N_hc()]
+        
 
     def initial_conditions(self, k, N_hc_val=None):
-
-        '''
-        Suitable initial conditions. We choose Bunch-Davies vacuum for scalar and tensor perturbations.
-
-        Parameters
-        ----------
-        k : float
-            Comoving wavenumber.
-        N_hc_val : float, optional
-            Precomputed horizon-crossing e-fold for this k. If None, it is obtained
-            from N_hc() internally (one extra brentq call).
-        '''
-
         if N_hc_val is None:
             N_hc_val = self.N_hc(k)[0]
-        N0 = N_hc_val - self.N_inside  # e-folds at which we start the integration
+        
+        if np.isnan(N_hc_val):
+            return [np.nan] * 10
+
+        N0 = N_hc_val - self.N_inside  
         a0 = self._ai*np.exp(N0)
 
-        #Initial condition for the background
         phi0 = self.phi(N0)
         dphidN0 = self.dphidN(N0)
         H0 = self.H(N0)
@@ -238,29 +273,21 @@ class Perturbations:
         _, d2phidN20 = self.background._odes(N0, Y0)
         z0 = self._z(a0, dphidN0)
 
-
-        #Bunch-Davies vacuum for R perturbations
         Rk_re_ic = (1/(np.sqrt(2*k)))/z0
         Rk_im_ic = 0
         Rk_re_N_ic = -Rk_re_ic*((d2phidN20/dphidN0) + 1)
         Rk_im_N_ic = - np.sqrt(k/2)/(a0*H0*z0)
 
-        #Initial conditions for tensor perturbations
         hk_re_ic = (1/(np.sqrt(2*k)))/a0
         hk_im_ic = 0
         hk_re_N_ic = -hk_re_ic
         hk_im_N_ic = -np.sqrt(k/2)/(a0**2*H0)  
         
         return [phi0, dphidN0, Rk_re_ic, Rk_re_N_ic, Rk_im_ic, Rk_im_N_ic, hk_re_ic, hk_re_N_ic, hk_im_ic, hk_im_N_ic]
-
     
 
+
     def _solver(self, k = None):
-
-        '''
-        Solves the scalar perturbation equation for the pivot mode k = 0.05 Mpc^-1
-        '''
-
         if k is None:
             k = self.k_CMB
     
@@ -281,22 +308,16 @@ class Perturbations:
         return self.solution
     
 
+    
     def power_spectra_pivot(self, k= None):
-
         if k is None:
             k = self.k_CMB
         
         sol = self._solver(k)
 
-        #Data
-        N = sol.t
-        R_re = sol.y[2]
-        R_im = sol.y[4]
-        h_re = sol.y[6]
-        h_im = sol.y[8]
+        R_re, R_im = sol.y[2], sol.y[4]
+        h_re, h_im = sol.y[6], sol.y[8]
 
-        
-        #Power spectrum
         P_s = k**3*(R_re[-1]**2 + R_im[-1]**2)/(2*np.pi**2)
         P_t = 8*k**3*(h_re[-1]**2 + h_im[-1]**2)/(2*np.pi**2)
         r = P_t/P_s
@@ -305,81 +326,35 @@ class Perturbations:
         print(f'Tensor to scalar ratio at pivot scale is {r}')
 
         return P_s, P_t, r
-
-
-
-    def _compute_power_spectrum(self, k, N_hc_val=None):
-
-        """
-        Compute P_s and P_t for a given wavenumber k.
-
-        Parameters
-        ----------
-        k : float
-            Comoving wavenumber.
-        N_hc_val : float, optional
-            Precomputed horizon-crossing e-fold for this k.
-            If None, it is computed internally via brentq (slower).
-        """
-
-        # Use precomputed N_hc if available to avoid a redundant brentq call
-        if N_hc_val is None:
-            N_hc_val = self.N_hc(k)[0]
-
-        N_ini_val = N_hc_val - self.N_inside
-        # Stop integration 5 e-folds after horizon crossing: the perturbation
-        # freezes quickly on super-Hubble scales, so integrating to Nend is wasteful.
-        N_end_val = min(N_hc_val + 5.0, self.Nend)
-
-        Y0 = self.initial_conditions(k, N_hc_val=N_hc_val)
-
-        # For odeint we need the time as the first argument in the ODE        
-        def ode_func(Y, N, k):
-            return self._odes(N, Y, k)
-        
-        #We use an adaptative tolerance for the very small modes (k >> aH)
-        if self.scale == 'CMB':
-            tol = 1e-10
-        elif self.scale == 'PBH':
-            tol = 1e-16/k   # avoid absurdly tight tol for large k
-
-        # Solve the system with odeint (LSODA optimised in FORTRAN).
-        # We integrate only to N_end_val (≈ N_hc + 5) instead of Nend:
-        # the mode is already super-Hubble and frozen, so the extra e-folds are free.
-        sol = odeint(
-            ode_func,
-            Y0,
-            np.linspace(N_ini_val, N_end_val, 1000),  
-            args=(k,),
-            atol=tol,
-            mxstep=10000000
-            )   
-        
-        Y_hc = sol[-1]
-        Rk_re, Rk_im, hk_re, hk_im = Y_hc[2], Y_hc[4], Y_hc[6], Y_hc[8]
-        
-        P_s = k**3 * (Rk_re**2 + Rk_im**2) / (2 * np.pi**2)
-        P_t = 8 * k**3 * (hk_re**2 + hk_im**2) / (2 * np.pi**2)
-        
-        return P_s, P_t
+    
 
 
     def power_spectrum(self):
-
         """ 
-        Pre-compute all horizon-crossing e-folds in a single serial pass. 
-        Each brentq call is cheap, but doing 1000 of them inside a parallel
+        Calcula el espectro usando multiprocesamiento eficiente aislando la clase principal.
         """
+        N_hc_list = self.N_hc()           
+        self._N_hc_cache = N_hc_list      
+        N_hc_vals = [N for N, _ in N_hc_list]   
 
-        N_hc_list = self.N_hc()           # list of (N_val, k_val) for all k_modes
-        self._N_hc_cache = N_hc_list      # cache for reuse by Plot_spectrum
-        N_hc_vals = [N for N, _ in N_hc_list]   # aligned with self.k_modes
+       
+        Y0_list = [self.initial_conditions(k, N_hc_val=N_val) for k, N_val in zip(self.k_modes, N_hc_vals)]
+
+        H_func = self.H
+        V_func = self.potential.evaluate
+        dV_func = self.potential.first_derivative
+        ai_cached = self._ai_cached
+        scale = self.scale
+        N_inside = self.N_inside
+        Nend = self.Nend
 
         results = Parallel(n_jobs=-1)(
-            delayed(self._compute_power_spectrum)(k, N_hc_val)
-            for k, N_hc_val in tqdm(zip(self.k_modes, N_hc_vals),
-                                    total=len(self.k_modes),
-                                    desc="Computing P(k)")
+            delayed(solver_k_mode)(
+                k, N_val, N_inside, Nend, Y0, scale, ai_cached, H_func, V_func, dV_func
+            )
+            for k, N_val, Y0 in tqdm(zip(self.k_modes, N_hc_vals, Y0_list),
+                                     total=len(self.k_modes),
+                                     desc="Computing P(k)")
         )
 
         PS = np.array([r[0] for r in results])
@@ -389,17 +364,11 @@ class Perturbations:
         self._P_t_array = PT
 
         return PS, PT 
-
+    
 
 
     @property
     def spectral_tilts(self):
-        
-        '''
-        Calculates the spectral indices n_s and n_t evaluated on the pivot scale k_pivot,
-        using the spectrum already calculated with Power_spectrum().
-        '''
-        
         from scipy.interpolate import interp1d
 
         if not hasattr(self, '_P_s_array') or not hasattr(self, '_P_t_array'):
@@ -414,7 +383,6 @@ class Perturbations:
         dlogPs = np.gradient(np.log(P_s), log_k)
         dlogPt = np.gradient(np.log(P_t), log_k)
 
-        # Interpolation
         n_s_interp = interp1d(k, 1 + dlogPs, kind='cubic', bounds_error = False, fill_value="extrapolate")
         n_t_interp = interp1d(k, dlogPt, kind='cubic', bounds_error = False, fill_value="extrapolate")
 
@@ -422,19 +390,10 @@ class Perturbations:
         n_t_pivot = float(n_t_interp(k_pivot))
 
         return {'n_s': n_s_pivot, 'n_t': n_t_pivot}
+    
 
 
     def save_power_spectra(self, filename: str = 'power_spectra.dat', path: str = '.'):
-        
-        """
-        Parameters
-        ----------
-        filename : str, optional
-            Output filename. Default is 'power_spectra.dat'.
-        path : str, optional
-            Directory where the file will be saved. Default is current directory.
-        """
-
         if self._P_s_array is None:
             raise RuntimeError('Power spectra not computed yet. Call .power_spectrum() first.')
         
@@ -445,4 +404,3 @@ class Perturbations:
         data = np.column_stack([self.k_modes, self._P_s_array, self._P_t_array])
         np.savetxt(full_path, data, header=header, comments='# ')
         print(f'Saved to {full_path}')
-

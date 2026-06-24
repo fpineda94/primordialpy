@@ -1,14 +1,35 @@
 import numpy as np
 from scipy.interpolate import interp1d
 import os
-import matplotlib.pyplot as plt
 from typing import Optional
-
 from primordialpy.perturbations import Perturbations
 
 class InducedGW:
+
     """
-    Docstring for InducedGW: This class computes second order induced GW from the enhancement of primordial curvature perturbations in single field inflarionary models. The inspirations of this class was taken from the Fortran code of K. Rezazadeh (arXiv:2110.01482), using the expressions from  Kohri & Terada (arXiv:1804.08577)
+    Computes the scalar-induced gravitational wave (SIGW) spectrum.
+
+    Uses the kernel from Kohri & Terada (arXiv:1804.08577) and follows
+    the numerical approach of Rezazadeh (arXiv:2110.01482).
+
+    Parameters
+    ----------
+    perturbations : Perturbations, optional
+        Perturbations instance with a computed power spectrum.
+    filename : str, optional
+        Path to a file with columns [k, Ps].
+    k_modes : array-like, optional
+        Comoving wavenumber array [Mpc^-1].
+    Ps : array-like, optional
+        Primordial power spectrum array.
+    k_col : int, optional
+        Column index for k in the file. Default is 0.
+    Ps_col : int, optional
+        Column index for Ps in the file. Default is 1.
+    delimiter : str, optional
+        File delimiter. Default is None (whitespace).
+    logk : bool, optional
+        If True, k column is in log10 scale. Default is False.
     """
 
     def __init__(
@@ -22,6 +43,9 @@ class InducedGW:
         delimiter=None,
         logk: bool = False
     ):
+        
+        self.f_hz = None
+        self.omega_gw = None
 
         # -------- Case 1: From Perturbations object --------
         if perturbations is not None:
@@ -54,6 +78,7 @@ class InducedGW:
 
         self._validate_input()
         self._build_interpolator()
+
     
     def _load_from_file(
         self,
@@ -141,16 +166,13 @@ class InducedGW:
             
             return kernel
 
-    def compute(self, k_output=None, n_int=200, save = False, filename = None):
+    def compute(self, k_output=None, n_int=200):
       
         if k_output is None:
             k_output = self.k_modes
 
         omega_gw = np.zeros_like(k_output)
-        
-        # Physical constants
-        # Omega_r,0 * h^2 approx 4.18e-5
-        # c_g  approx 0.4 for SM 
+
         Omega_r0_h2 = 4.18e-5 
         prefactor_const = 0.83 * (106.75/10.75)**(-1/3) * (Omega_r0_h2) * (1/6.0)
 
@@ -189,14 +211,30 @@ class InducedGW:
         print(f'Omega_GW_peak = {self.omega_gw[idx_peak]}')
         print(f'f_peak = {self.f_hz[idx_peak]} Hz')
 
-        if save:
-            if filename is None:
-                filename = 'signal_GW_data.txt'
-            filepath = os.path.join('Data', filename)
-            header = (f'#Columns: f_hz, Omega_GW')
-        np.savetxt(filepath,
-                   np.column_stack([self.f_hz, self.omega_gw]),
-                   header= header,
-                   fmt = '%.16e'
-                    )
         return self.f_hz, self.omega_gw
+    
+    def save_gw(self, filename='gw_data.dat', path = "."):
+
+        """
+        Parameters
+        ----------
+        filename : str, optional
+            Output filename. Default is 'gw_data.dat'.
+        path : str, optional
+            Directory where the file will be saved. Default is current directory.
+        """
+
+        if self.f_hz is None:
+            raise RuntimeError('f_hz not computed yet. Call .compute() first')
+        
+        if self.omega_gw is None:
+            raise RuntimeError('Omega_gw not computed yet, Call .compute() first')
+        
+        os.makedirs(path, exist_ok=True)
+        full_path = os.path.join(path, filename)
+        
+        header = 'f_hz Omega_gw'
+        data = np.column_stack([self.f_hz, self.omega_gw])
+        np.savetxt(full_path, data, header=header, comments='#')
+        print(f'Saved to {full_path}')
+        
