@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import CubicSpline
 import os 
 import matplotlib.pyplot as plt
 from primordialpy.perturbations import Perturbations
@@ -52,12 +52,10 @@ class PBHAbundance:
         self.Msun = 1.0  # work in solar mass units
 
         
-        self.Ps_interp = interp1d(
+        self.Ps_interp = CubicSpline(
             self.k_modes,
             self.Ps,
-            kind="cubic",
-            bounds_error=False,
-            fill_value= 0.0,
+            extrapolate=True
         )
 
         # Peak values

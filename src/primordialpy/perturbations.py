@@ -8,81 +8,6 @@ import os
 from primordialpy.background import Background
 from primordialpy.model import Potential
 
-# =====================================================================
-# EXTERNAL FUNCTIONS (Optimized for Multiprocessing)
-# =====================================================================
-
-def solver_k_mode(k, N_hc_val, N_inside, Nend, Y0, scale, ai_cached, H_func, V_func, dV_func):
-    
-    """
-    It solves the perturbation system for a single mode. 
-    Being outside the class avoids the serialization overhead (pickling) of joblib.
-    """
-
-    if np.isnan(N_hc_val):
-        return np.nan, np.nan
-
-    N_ini_val = N_hc_val - N_inside
-    N_end_val = min(N_hc_val + 5.0, Nend)
-
-    def ode_func(N, Y):
-        [phi, dphidN, Rk_re, Rk_re_N, Rk_im, Rk_im_N, hk_re, hk_re_N, hk_im, hk_im_N] = Y
-        
-        # Background
-        V = V_func(phi)
-        dVdphi = dV_func(phi)
-        d2phidN2 = -(3 - 0.5*(dphidN**2))*dphidN - (6 - (dphidN**2))*dVdphi/(2*V)
-
-        # Perturbations
-        a = ai_cached * np.exp(N)
-        H = H_func(N) 
-
-        z = a * dphidN
-        z_N = a * (dphidN + d2phidN2)
-
-        k_aH_sq = (k / (a * H))**2
-        term_s = 1 - 0.5*(dphidN**2) + 2*(z_N/z)
-        term_t = 3 - 0.5*(dphidN**2)
-
-        # Scalar perturbations
-        Rk_re_NN = -term_s * Rk_re_N - k_aH_sq * Rk_re
-        Rk_im_NN = -term_s * Rk_im_N - k_aH_sq * Rk_im
-
-        # Tensor perturbations
-        hk_re_NN = -term_t * hk_re_N - k_aH_sq * hk_re
-        hk_im_NN = -term_t * hk_im_N - k_aH_sq * hk_im
-
-        return [dphidN, d2phidN2, Rk_re_N, Rk_re_NN, Rk_im_N, Rk_im_NN, hk_re_N, hk_re_NN, hk_im_N, hk_im_NN]
-
-    if scale == 'CMB':
-        tol = 1e-10
-    elif scale == 'PBH':
-        tol = 1e-10  
-
-    sol = solve_ivp(
-        ode_func,
-        t_span=(N_ini_val, N_end_val),
-        y0=Y0,
-        method='LSODA',          
-        rtol=tol,
-        atol=1e-16/k,    
-        dense_output=False,
-        max_step=np.inf,
-    )
-
-    if not sol.success:
-        return np.nan, np.nan
-
-    Y_hc = sol.y[:, -1]          
-
-    Rk_re, Rk_im = Y_hc[2], Y_hc[4]
-    hk_re,  hk_im = Y_hc[6], Y_hc[8]
-
-    P_s = k**3 * (Rk_re**2 + Rk_im**2) / (2 * np.pi**2)
-    P_t = 8 * k**3 * (hk_re**2 + hk_im**2) / (2 * np.pi**2)
-
-    return P_s, P_t
-
 
 
 class Perturbations: 
@@ -171,7 +96,7 @@ class Perturbations:
         if hasattr(self, 'scale') and self.scale == 'CMB':
                 self.k_min, self.k_max = self.norma*self.aH(self.Nhc - 7), self.norma*self.aH(self.Nhc + 7)
         elif hasattr(self, 'scale') and self.scale == 'PBH':
-                self.k_min, self.k_max = self.norma*self.aH(self.Nhc - 7), self.norma*self.aH(self.Nend - 4)
+                self.k_min, self.k_max = self.norma*self.aH(self.Nhc - 7), 1e18
       
         self.k_modes = np.logspace(np.log10(self.k_min), np.log10(self.k_max), num = 1000)
 
@@ -404,3 +329,82 @@ class Perturbations:
         data = np.column_stack([self.k_modes, self._P_s_array, self._P_t_array])
         np.savetxt(full_path, data, header=header, comments='# ')
         print(f'Saved to {full_path}')
+
+
+
+# =====================================================================
+# EXTERNAL FUNCTIONS (Optimized for Multiprocessing)
+# =====================================================================
+
+def solver_k_mode(k, N_hc_val, N_inside, Nend, Y0, scale, ai_cached, H_func, V_func, dV_func):
+    
+    """
+    It solves the perturbation system for a single mode. 
+    Being outside the class avoids the serialization overhead (pickling) of joblib.
+    """
+
+    if np.isnan(N_hc_val):
+        return np.nan, np.nan
+
+    N_ini_val = N_hc_val - N_inside
+    N_end_val = min(N_hc_val + 5.0, Nend)
+
+    def ode_func(N, Y):
+        [phi, dphidN, Rk_re, Rk_re_N, Rk_im, Rk_im_N, hk_re, hk_re_N, hk_im, hk_im_N] = Y
+        
+        V = V_func(phi)
+        dVdphi = dV_func(phi)
+        d2phidN2 = -(3 - 0.5*(dphidN**2))*dphidN - (6 - (dphidN**2))*dVdphi/(2*V)
+
+        a = ai_cached * np.exp(N)
+        H = H_func(N) 
+
+        z = a * dphidN
+        z_N = a * (dphidN + d2phidN2)
+
+        k_aH_sq = (k / (a * H))**2
+        term_s = 1 - 0.5*(dphidN**2) + 2*(z_N/z)
+        term_t = 3 - 0.5*(dphidN**2)
+
+        with np.errstate(over='ignore', invalid='ignore'):
+            Rk_re_NN = -term_s * Rk_re_N - k_aH_sq * Rk_re
+            Rk_im_NN = -term_s * Rk_im_N - k_aH_sq * Rk_im
+            hk_re_NN = -term_t * hk_re_N - k_aH_sq * hk_re
+            hk_im_NN = -term_t * hk_im_N - k_aH_sq * hk_im
+
+        # Si explota dentro del horizonte, no pasa nada: 
+        # el modo aún oscila y se normalizará al cruzar horizonte
+        for val, name in [(Rk_re_NN, 'Rk_re_NN'), (Rk_im_NN, 'Rk_im_NN')]:
+            if not np.isfinite(val):
+                Rk_re_NN = Rk_im_NN = 0.0
+                hk_re_NN = hk_im_NN = 0.0
+                break
+
+        return [dphidN, d2phidN2, Rk_re_N, Rk_re_NN, Rk_im_N, Rk_im_NN, hk_re_N, hk_re_NN, hk_im_N, hk_im_NN]
+    
+    if scale == 'CMB':
+        tol = 1e-12
+    elif scale == 'PBH':
+        tol = 1e-12  
+
+    sol = solve_ivp(
+        ode_func,
+        t_span=(N_ini_val, N_end_val),
+        y0=Y0,
+        method='DOP853',
+        rtol = tol,
+        atol = 1e-14/k
+    )
+
+    if not sol.success:
+        return np.nan, np.nan
+
+    Y_hc = sol.y[:, -1]          
+
+    Rk_re, Rk_im = Y_hc[2], Y_hc[4]
+    hk_re,  hk_im = Y_hc[6], Y_hc[8]
+
+    P_s = k**3 * (Rk_re**2 + Rk_im**2) / (2 * np.pi**2)
+    P_t = 8 * k**3 * (hk_re**2 + hk_im**2) / (2 * np.pi**2)
+
+    return P_s, P_t
