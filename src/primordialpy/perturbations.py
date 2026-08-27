@@ -282,7 +282,7 @@ class Perturbations:
             self.Ps_peak = np.nan
             self.k_peak = np.nan
             print("Warning: todos los valores de P_s son NaN, no se pudo determinar el pico.")
-        else:
+        elif scale == 'PBH':
                     i_peak = np.nanargmax(PS)
                     self.Ps_peak = PS[i_peak]
                     self.k_peak = self.k_modes[i_peak]

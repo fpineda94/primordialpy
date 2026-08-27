@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "primordialpy"
 version = "0.1.0"
-description = "A Python library for computing inflationary dynamics, primordial perturbations and PBHs abundances from any single-field inflation model"
+description = "A Python library for computing inflationary dynamics, primordial perturbations, PBHs abundances and SIGWs signals from any single-field inflation model"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
     {name = "Flavio Joao Pineda Arvizu", email = "fpineda@xanum.uam.mx"}
@@ -23,11 +23,11 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
 ]
 
-
 dependencies = [
-    "numpy>=2.0.0",
+    "numpy>=1.26.0",
     "matplotlib>=3.3.0",
     "scipy>=1.7.0",
     "sympy>=1.8.0",
@@ -48,7 +48,6 @@ dev = [
     "build", 
     "twine"
 ]
-
 
 [tool.setuptools.packages.find]
 where = ["src"]

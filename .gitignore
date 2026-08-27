@@ -221,4 +221,6 @@ pyrightconfig.json
 *.code-workspace
 *.vscode
 
+*.tmp.driveupload
+
 # End of https://www.toptal.com/developers/gitignore/api/python,macos,jupyternotebooks
