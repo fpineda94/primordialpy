@@ -7,13 +7,12 @@ name = "primordialpy"
 version = "0.1.0"
 description = "A Python library for computing inflationary dynamics, primordial perturbations and PBHs abundances from any single-field inflation model"
 readme = "README.md"
-# Relajé un poco la versión a 3.9 general, es más estándar que especificar el patch .6
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [
     {name = "Flavio Joao Pineda Arvizu", email = "fpineda@xanum.uam.mx"}
 ]
-keywords = ["cosmology", "inflation", "primordial black holes", "PBH", "power spectrum", "astrophysics"]
+keywords = ["cosmology", "inflation", "primordial black holes", "PBHs", "power spectrum", "SIGWs"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",

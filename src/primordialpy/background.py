@@ -92,6 +92,10 @@ class Background:
         # 2. Solver
         N_eval = np.linspace(self.N_in, self.N_fin, 10000) 
 
+        def end_event(N, Y):
+            return self._end_inflation(N, Y)
+        end_event.terminal = True
+
 
         self.solution = solve_ivp(
             self._odes, 
@@ -101,7 +105,7 @@ class Background:
             method=method,
             rtol=rtol,
             atol=atol,
-            events=self._end_inflation,
+            events=end_event,
             dense_output=True
         )        
         self._derived_data = None

@@ -96,7 +96,7 @@ class Perturbations:
         if hasattr(self, 'scale') and self.scale == 'CMB':
                 self.k_min, self.k_max = self.norma*self.aH(self.Nhc - 7), self.norma*self.aH(self.Nhc + 7)
         elif hasattr(self, 'scale') and self.scale == 'PBH':
-                self.k_min, self.k_max = self.norma*self.aH(self.Nhc - 7), 1e18
+                self.k_min, self.k_max = self.norma*self.aH(self.Nhc - 7), 1e20
       
         self.k_modes = np.logspace(np.log10(self.k_min), np.log10(self.k_max), num = 1000)
 
@@ -118,25 +118,9 @@ class Perturbations:
     
 
     def _odes(self, N, Y, k):
-        [phi, dphidN, Rk_re, Rk_re_N, Rk_im, Rk_im_N, hk_re, hk_re_N, hk_im, hk_im_N] = Y
-        
-        V = self.potential.evaluate(phi)
-        dVdphi = self.potential.first_derivative(phi)
-        d2phidN2 = -(3 - 0.5*(dphidN**2))*dphidN - (6 - (dphidN**2))*dVdphi/(2*V)
 
-        a = self._ai_cached * np.exp(N)
-        H = self.H(N)                    
-
-        z = self._z(a, dphidN)
-        z_N = a*(dphidN + d2phidN2)
-
-        Rk_re_NN = - (1 - 0.5*(dphidN**2) + 2*(z_N/z))*Rk_re_N - ((k/(a*H))**2)*Rk_re
-        Rk_im_NN = - (1 - 0.5*(dphidN**2) + 2*(z_N/z))*Rk_im_N - ((k/(a*H))**2)*Rk_im
-
-        hk_re_NN = - (3-(dphidN**2)*0.5)*hk_re_N-((k/(a*H))**2)*hk_re
-        hk_im_NN = - (3-(dphidN**2)*0.5)*hk_im_N-((k/(a*H))**2)*hk_im
-
-        return[dphidN, d2phidN2, Rk_re_N, Rk_re_NN, Rk_im_N, Rk_im_NN, hk_re_N, hk_re_NN, hk_im_N, hk_im_NN]
+        return _rhs(N, Y, k, self._ai_cached, self.H, self.potential.evaluate,
+                    self.potential.first_derivative)
 
 
     def N_hc(self, k=None, include_invalid=True):
@@ -219,16 +203,21 @@ class Perturbations:
         Y0 = self.initial_conditions(k)
         N_ini = self.N_ini(k)
         Nshs = self.N_shs(k)
-        N_span = [N_ini, Nshs]
-        N_eval = np.linspace(N_ini, Nshs, 10000)
+        # Cap consistente con solver_k_mode: nunca integrar más allá de Nend.
+        N_end = min(Nshs, self.Nend)
+        N_span = [N_ini, N_end]
+        N_eval = np.linspace(N_ini, N_end, 10000)
+
+        rtol = _rtol_for_scale(self.scale)
+        atol_vec = _tolerances(Y0, rtol=rtol)
 
         self.solution = solve_ivp(lambda N, Y: self._odes(N, Y, k),  
                         N_span, 
                         Y0, 
                         t_eval= N_eval, 
                         method ='LSODA',
-                        rtol = 1e-8, 
-                        atol = 1e-12, 
+                        rtol = rtol, 
+                        atol = atol_vec, 
                         dense_output= True)   
         return self.solution
     
@@ -288,6 +277,22 @@ class Perturbations:
         self._P_s_array = PS
         self._P_t_array = PT
 
+
+        if np.all(np.isnan(PS)):
+            self.Ps_peak = np.nan
+            self.k_peak = np.nan
+            print("Warning: todos los valores de P_s son NaN, no se pudo determinar el pico.")
+        else:
+                    i_peak = np.nanargmax(PS)
+                    self.Ps_peak = PS[i_peak]
+                    self.k_peak = self.k_modes[i_peak]
+
+                    ps_base, ps_exp = f"{self.Ps_peak:.4e}".split('e')
+                    k_base, k_exp = f"{self.k_peak:.4e}".split('e')
+
+                    print(fr'$Ps_peak = {ps_base}\times 10^{{{ps_exp}}}$')
+                    print(fr'$k_peak = {k_base}\times 10^{{{k_exp}}}\,\mathrm{{Mpc}}^{-1}$')
+    
         return PS, PT 
     
 
@@ -336,6 +341,71 @@ class Perturbations:
 # EXTERNAL FUNCTIONS (Optimized for Multiprocessing)
 # =====================================================================
 
+
+def _rtol_for_scale(scale, rtol_cmb=1e-8, rtol_pbh=1e-10):
+
+    if scale == 'CMB':
+        return rtol_cmb
+    elif scale == 'PBH':
+        return rtol_pbh
+    return rtol_cmb
+
+
+def _tolerances(Y0, rtol=1e-8, floor=1e-300):
+
+    Y0 = np.asarray(Y0, dtype=float)
+    scale = np.abs(Y0).copy()
+
+    scale[0] = max(scale[0], 1.0)
+    scale[1] = max(scale[1], 1.0)
+
+    r_scale = max(scale[2], scale[4])
+    scale[2] = scale[4] = r_scale
+
+    rn_scale = max(scale[3], scale[5])
+    scale[3] = scale[5] = rn_scale
+
+    h_scale = max(scale[6], scale[8])
+    scale[6] = scale[8] = h_scale
+
+    hn_scale = max(scale[7], scale[9])
+    scale[7] = scale[9] = hn_scale
+
+    return np.maximum(rtol * scale, floor)
+
+
+def _rhs(N, Y, k, ai_cached, H_func, V_func, dV_func):
+
+    [phi, dphidN, Rk_re, Rk_re_N, Rk_im, Rk_im_N, hk_re, hk_re_N, hk_im, hk_im_N] = Y
+
+    V = V_func(phi)
+    dVdphi = dV_func(phi)
+    d2phidN2 = -(3 - 0.5*(dphidN**2))*dphidN - (6 - (dphidN**2))*dVdphi/(2*V)
+
+    a = ai_cached * np.exp(N)
+    H = np.sqrt(V / (3 - 0.5*(dphidN**2)))
+
+    z = a * dphidN
+    z_N = a * (dphidN + d2phidN2)
+
+    k_aH_sq = (k / (a * H))**2
+    term_s = 1 - 0.5*(dphidN**2) + 2*(z_N/z)
+    term_t = 3 - 0.5*(dphidN**2)
+
+    with np.errstate(over='ignore', invalid='ignore'):
+        Rk_re_NN = -term_s * Rk_re_N - k_aH_sq * Rk_re
+        Rk_im_NN = -term_s * Rk_im_N - k_aH_sq * Rk_im
+        hk_re_NN = -term_t * hk_re_N - k_aH_sq * hk_re
+        hk_im_NN = -term_t * hk_im_N - k_aH_sq * hk_im
+
+    if not (np.isfinite(Rk_re_NN) and np.isfinite(Rk_im_NN)
+            and np.isfinite(hk_re_NN) and np.isfinite(hk_im_NN)):
+        Rk_re_NN = Rk_im_NN = 0.0
+        hk_re_NN = hk_im_NN = 0.0
+
+    return [dphidN, d2phidN2, Rk_re_N, Rk_re_NN, Rk_im_N, Rk_im_NN, hk_re_N, hk_re_NN, hk_im_N, hk_im_NN]
+
+
 def solver_k_mode(k, N_hc_val, N_inside, Nend, Y0, scale, ai_cached, H_func, V_func, dV_func):
     
     """
@@ -347,53 +417,22 @@ def solver_k_mode(k, N_hc_val, N_inside, Nend, Y0, scale, ai_cached, H_func, V_f
         return np.nan, np.nan
 
     N_ini_val = N_hc_val - N_inside
-    N_end_val = min(N_hc_val + 5.0, Nend)
 
-    def ode_func(N, Y):
-        [phi, dphidN, Rk_re, Rk_re_N, Rk_im, Rk_im_N, hk_re, hk_re_N, hk_im, hk_im_N] = Y
-        
-        V = V_func(phi)
-        dVdphi = dV_func(phi)
-        d2phidN2 = -(3 - 0.5*(dphidN**2))*dphidN - (6 - (dphidN**2))*dVdphi/(2*V)
+    if scale == 'PBH':
+        N_end_val = Nend
+    else:
+        N_end_val = min(N_hc_val + 5.0, Nend)
 
-        a = ai_cached * np.exp(N)
-        H = H_func(N) 
-
-        z = a * dphidN
-        z_N = a * (dphidN + d2phidN2)
-
-        k_aH_sq = (k / (a * H))**2
-        term_s = 1 - 0.5*(dphidN**2) + 2*(z_N/z)
-        term_t = 3 - 0.5*(dphidN**2)
-
-        with np.errstate(over='ignore', invalid='ignore'):
-            Rk_re_NN = -term_s * Rk_re_N - k_aH_sq * Rk_re
-            Rk_im_NN = -term_s * Rk_im_N - k_aH_sq * Rk_im
-            hk_re_NN = -term_t * hk_re_N - k_aH_sq * hk_re
-            hk_im_NN = -term_t * hk_im_N - k_aH_sq * hk_im
-
-        # Si explota dentro del horizonte, no pasa nada: 
-        # el modo aún oscila y se normalizará al cruzar horizonte
-        for val, name in [(Rk_re_NN, 'Rk_re_NN'), (Rk_im_NN, 'Rk_im_NN')]:
-            if not np.isfinite(val):
-                Rk_re_NN = Rk_im_NN = 0.0
-                hk_re_NN = hk_im_NN = 0.0
-                break
-
-        return [dphidN, d2phidN2, Rk_re_N, Rk_re_NN, Rk_im_N, Rk_im_NN, hk_re_N, hk_re_NN, hk_im_N, hk_im_NN]
-    
-    if scale == 'CMB':
-        tol = 1e-12
-    elif scale == 'PBH':
-        tol = 1e-12  
+    rtol = _rtol_for_scale(scale)
+    atol_vec = _tolerances(Y0, rtol=rtol)
 
     sol = solve_ivp(
-        ode_func,
+        lambda N, Y: _rhs(N, Y, k, ai_cached, H_func, V_func, dV_func),
         t_span=(N_ini_val, N_end_val),
         y0=Y0,
-        method='DOP853',
-        rtol = tol,
-        atol = 1e-14/k
+        method='LSODA',
+        rtol=rtol,
+        atol=atol_vec,
     )
 
     if not sol.success:
