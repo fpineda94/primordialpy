@@ -11,7 +11,7 @@ A Python library for computing inflationary dynamics, primordial perturbations, 
 `primordialpy` allows users to analyze single-field inflationary models by writing the inflationary potential as a simple text string expression. The code automatically handles the following:
 
 *   **Solve the background dynamics** using highly accurate numerical integrators.
-*   **Compute scalar and tensor primordial perturbations** by solving the equation of comoving vurvature perturbation $\mathcal{R}_k$.
+*   **Compute scalar and tensor primordial perturbations** by solving the equation of comoving curvature perturbation $\mathcal{R}_k$.
 *   **Determine and plot the primordial power spectrum**.
 *   **Estimate the abundance of Primordial Black Holes (PBHs)** using the Press-Schechter formalism.
 *   **Compute the signal of scalar-induced Gravitational Waves (SIGWs)**.
@@ -30,17 +30,33 @@ A Python library for computing inflationary dynamics, primordial perturbations, 
 *   tqdm >= 4.60.0
 
 ### Installation from GitHub
-To install the latest development version directly from the repository:
+It is recommended to install `primordialpy` inside a virtual environment to avoid dependency conflicts with other packages:
 
 ```bash
-git clone [https://github.com/fpineda94/primordialpy.git](https://github.com/fpineda94/primordialpy.git)
+python -m venv primordialpy
+source primordialpy/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+Or if you prefer to use Conda:
+
+```bash
+conda create --name primordialpy 
+conda activate primordiapy  
+```
+
+Then, install the latest development version directly from the repository:
+
+```bash
+git clone https://github.com/fpineda94/primordialpy.git
 cd primordialpy
 pip install -e .
+```
 
 ---
 
-## Basic Usage 
+## Basic Usage
 
+```python
 import matplotlib.pyplot as plt
 from primordialpy.model import PotentialFunction
 from primordialpy.background import Background
@@ -49,7 +65,7 @@ from primordialpy.perturbations import Perturbations
 # 1. Define your potential as a string
 # For example, chaotic inflation: V(phi) = (m^2 / 2) phi^2
 V_str = '0.5 * m**2 * phi**2'
-params = {'m': 5.9e-6} 
+params = {'m': 5.9e-6}
 
 # 2. Initialize the model
 potential = PotentialFunction.function(V_str, param_values=params)
@@ -63,20 +79,22 @@ pert = Perturbations(potential, bg, scale='CMB', N_CMB=60)
 Ps, Pt = pert.power_spectrum()
 
 print(f"Spectral tilts: {pert.spectral_tilts}")
+```
 
 ---
 
-## Main features 
+## Main features
 
-* Intuitive Interface: Define inflationary scenarios using text-based mathematical expressions; SymPy handles the analytical derivatives automatically.
-* Flexibility: Compatible with any single-field inflation model.
-* Performance: Heavily optimized ODE solvers and parallelized numerical integration for SIGWs.
-* Complete Pipeline: Connects the universe's background dynamics all the way to contemporary observables (PBHs and GWs).
+* **Intuitive Interface**: Define inflationary scenarios using text-based mathematical expressions; SymPy handles the analytical derivatives automatically.
+* **Flexibility**: Compatible with canonical single-field inflation models.
+* **Performance**: Heavily optimized ODE solvers and parallelized numerical integration for SIGWs.
+* **Complete Pipeline**: Connects the universe's background dynamics all the way to contemporary observables (PBHs and GWs).
 
 ---
 
 ## Project Structure
 
+```
 primordialpy/
 ├── src/
 │   └── primordialpy/
@@ -92,54 +110,55 @@ primordialpy/
 ├── pyproject.toml              # Modern Python package configuration
 ├── README.md
 └── LICENSE
+```
 
---- 
+---
 
 ## Examples
 
-Check out the examples/ folder for Jupyter notebooks with detailed use cases, including:
+Check out the `examples/` folder for Jupyter notebooks with detailed use cases, including:
 
 * Standard inflationary models (e.g., Starobinsky, Chaotic).
 * Potentials with features (inflection points, bumps) for PBH generation.
 * Comparisons with observational data and constraints.
 
---- 
+---
 
-## Contribuiting
+## Contributing
 
 Contributions are welcome! If you find a bug or have suggestions:
 
 1. Open an issue.
 2. Fork the repository.
-3. Create a branch for your feature (git checkout -b feature/new-feature).
-4. Commit your changes (git commit -m 'Add new feature').
-5. Push to the branch (git push origin feature/new-feature).
-6. Open a Pull Request
+3. Create a branch for your feature (`git checkout -b feature/new-feature`).
+4. Commit your changes (`git commit -m 'Add new feature'`).
+5. Push to the branch (`git push origin feature/new-feature`).
+6. Open a Pull Request.
 
---- 
+---
 
-## Author 
+## Author
 
 Flavio Pineda
 Email: fpineda@xanum.uam.mx
-GitHub: @fpineda94
-
+GitHub: [@fpineda94](https://github.com/fpineda94)
 
 ## License
+
 This project is licensed under the MIT License. See the LICENSE file for details.
 
-
-## Citation 
+## Citation
 
 If you use primordialpy in your research, please cite:
 
+```bibtex
 @software{primordialpy2026,
   author = {Pineda Arvizu, Flavio Joao},
   title = {primordialpy: A Python library for inflationary dynamics, PBH abundance, and SIGW calculations},
   year = {2026},
-  url = {[https://github.com/fpineda94/primordialpy](https://github.com/fpineda94/primordialpy)}
+  url = {https://github.com/fpineda94/primordialpy}
 }
-
+```
 
 ## Acknowledgments
 
